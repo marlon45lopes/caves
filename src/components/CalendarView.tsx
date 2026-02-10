@@ -18,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useAuth } from '@/hooks/useAuth';
+import { useEffect } from 'react';
 
 type ViewMode = 'day' | 'week';
 
@@ -28,8 +30,22 @@ export function CalendarView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newAppointmentOpen, setNewAppointmentOpen] = useState(false);
   const [newAppointmentData, setNewAppointmentData] = useState<{ date: Date; time: string } | undefined>(undefined);
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'ADMIN';
+  const isAtendente = profile?.role === 'ATENDENTE';
+  const isClinica = profile?.role === 'CLINICA';
+
+  const canCreateAppointment = isAdmin || isAtendente;
+
   const [selectedClinicId, setSelectedClinicId] = useState<string>('all');
   const [selectedSpecialtyName, setSelectedSpecialtyName] = useState<string>('all');
+
+  // Auto-select clinic if user belongs to one
+  useEffect(() => {
+    if (profile?.clinica_id) {
+      setSelectedClinicId(profile.clinica_id);
+    }
+  }, [profile]);
 
   const { data: appointments, isLoading } = useAppointments(undefined, selectedClinicId, selectedSpecialtyName);
   const { data: clinics } = useClinics(true);
@@ -146,12 +162,13 @@ export function CalendarView() {
                 setSelectedClinicId(value);
                 setSelectedSpecialtyName('all');
               }}
+              disabled={isClinica}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Filtrar por clínica" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas as clínicas</SelectItem>
+                {!isClinica && <SelectItem value="all">Todas as clínicas</SelectItem>}
                 {clinics?.map((clinic) => (
                   <SelectItem key={clinic.id} value={clinic.id}>
                     {clinic.nome}
@@ -166,10 +183,12 @@ export function CalendarView() {
               <TabsTrigger value="week">Semana</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button onClick={() => handleNewAppointment()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Agendamento
-          </Button>
+          {canCreateAppointment && (
+            <Button onClick={() => handleNewAppointment()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Agendamento
+            </Button>
+          )}
         </div>
       </div>
 
@@ -228,7 +247,7 @@ export function CalendarView() {
                         className="min-h-[120px] h-full border-b border-r p-1 hover:bg-accent/10 transition-colors flex gap-1 group overflow-hidden"
                         onClick={(e) => {
                           // Only trigger if clicking the container directly
-                          if (e.target === e.currentTarget) {
+                          if (e.target === e.currentTarget && canCreateAppointment) {
                             handleNewAppointment(day, timeString);
                           }
                         }}
@@ -249,15 +268,16 @@ export function CalendarView() {
                                 />
                               </div>
                             ))}
-                            {/* Reserved empty space to ensure we can always click to create a new appointment */}
-                            <div
-                              className="min-w-[40px] flex-1 h-full cursor-pointer hover:bg-accent/5 transition-colors"
-                              title="Clique para adicionar novo agendamento"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleNewAppointment(day, timeString);
-                              }}
-                            />
+                            {canCreateAppointment && (
+                              <div
+                                className="min-w-[40px] flex-1 h-full cursor-pointer hover:bg-accent/5 transition-colors"
+                                title="Clique para adicionar novo agendamento"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNewAppointment(day, timeString);
+                                }}
+                              />
+                            )}
                           </>
                         )}
                       </div>

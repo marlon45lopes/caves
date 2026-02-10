@@ -29,6 +29,7 @@ import { useUpdateAppointmentStatus, useDeleteAppointment } from '@/hooks/useApp
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AppointmentActionsDialogProps {
   appointment: Appointment | null;
@@ -42,9 +43,14 @@ export function AppointmentActionsDialog({
   onOpenChange,
 }: AppointmentActionsDialogProps) {
   const [editOpen, setEditOpen] = useState(false);
+  const { profile } = useAuth();
   const updateStatus = useUpdateAppointmentStatus();
   const deleteAppointment = useDeleteAppointment();
   const navigate = useNavigate();
+
+  const isAdmin = profile?.role === 'ADMIN';
+  const isAtendente = profile?.role === 'ATENDENTE';
+  const isClinica = profile?.role === 'CLINICA';
 
   if (!appointment) return null;
 
@@ -100,7 +106,12 @@ export function AppointmentActionsDialog({
   };
 
   const actions = [
-    { icon: Edit, label: 'Editar agendamento', onClick: handleEditClick },
+    {
+      icon: Edit,
+      label: 'Editar agendamento',
+      onClick: handleEditClick,
+      show: isAdmin || isAtendente
+    },
     {
       icon: FileText,
       label: 'Ficha do paciente',
@@ -111,7 +122,8 @@ export function AppointmentActionsDialog({
         } else {
           toast.error("Paciente não identificado neste agendamento");
         }
-      }
+      },
+      show: true // Everyone can see the record? User didn't specify, but safer to keep
     },
     {
       icon: FileCheck,
@@ -124,7 +136,8 @@ export function AppointmentActionsDialog({
           console.error(error);
           toast.error('Erro ao gerar guia');
         }
-      }
+      },
+      show: isAdmin || isAtendente
     },
     {
       icon: Download,
@@ -137,9 +150,10 @@ export function AppointmentActionsDialog({
           console.error(error);
           toast.error('Erro ao gerar comprovante');
         }
-      }
+      },
+      show: true
     },
-  ];
+  ].filter(action => action.show);
 
   return (
     <>
@@ -227,15 +241,18 @@ export function AppointmentActionsDialog({
                   Faltou
                 </Button>
               </div>
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={handleDelete}
-                disabled={updateStatus.isPending || deleteAppointment.isPending}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir agendamento
-              </Button>
+
+              {!isClinica && (
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={handleDelete}
+                  disabled={updateStatus.isPending || deleteAppointment.isPending || !isAdmin}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir agendamento
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>

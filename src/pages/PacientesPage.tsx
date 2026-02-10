@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { usePatients, useDeletePatient } from '@/hooks/useAppointments';
 import { PatientFormDialog } from '@/components/PatientFormDialog';
+import { useAuth } from '@/hooks/useAuth';
 import type { Patient } from '@/types/appointment';
 import { toast } from 'sonner';
 import {
@@ -27,8 +28,16 @@ const PacientesPage = () => {
   const [deletePatient, setDeletePatient] = useState<Patient | null>(null);
   const navigate = useNavigate();
 
+  const { profile } = useAuth();
   const { data: patients, isLoading } = usePatients();
   const deletePatientMutation = useDeletePatient();
+
+  const isAdmin = profile?.role === 'ADMIN';
+  const isAtendente = profile?.role === 'ATENDENTE';
+  const isClinica = profile?.role === 'CLINICA';
+
+  // Only Admin or Atendente can create/edit patients
+  const canModify = isAdmin || isAtendente;
 
   const filteredPatients = patients?.filter((p) =>
     p.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -37,12 +46,13 @@ const PacientesPage = () => {
   );
 
   const handleEdit = (patient: Patient) => {
+    if (!canModify) return;
     setEditingPatient(patient);
     setFormOpen(true);
   };
 
   const handleDelete = async () => {
-    if (!deletePatient) return;
+    if (!deletePatient || !isAdmin) return;
     try {
       await deletePatientMutation.mutateAsync(deletePatient.id);
       toast.success('Paciente excluído com sucesso!');
@@ -53,6 +63,7 @@ const PacientesPage = () => {
   };
 
   const handleNewPatient = () => {
+    if (!canModify) return;
     setEditingPatient(null);
     setFormOpen(true);
   };
@@ -70,10 +81,12 @@ const PacientesPage = () => {
               className="pl-10"
             />
           </div>
-          <Button onClick={handleNewPatient}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Paciente
-          </Button>
+          {canModify && (
+            <Button onClick={handleNewPatient}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Paciente
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -108,22 +121,30 @@ const PacientesPage = () => {
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleEdit(patient as Patient)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => setDeletePatient(patient as Patient)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+
+                    {canModify && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleEdit(patient as Patient)}
+                        title="Editar"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeletePatient(patient as Patient)}
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-1 text-sm text-muted-foreground">

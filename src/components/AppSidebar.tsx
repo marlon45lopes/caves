@@ -30,9 +30,25 @@ const menuItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const isCollapsed = state === 'collapsed';
+
+  const isAdmin = profile?.role === 'ADMIN';
+  const isAtendente = profile?.role === 'ATENDENTE';
+  const isClinica = profile?.role === 'CLINICA';
+
+  const filteredMenuItems = menuItems.filter(item => {
+    if (isClinica) {
+      return ['Dashboard', 'Agenda', 'Pacientes'].includes(item.title);
+    }
+    if (isAtendente) {
+      // Atendente usually manages clinics/specialties/companies too, but maybe not reports?
+      // User didn't specify, let's keep it broad for them but restricted for clinic.
+      return item.title !== 'Relatório' || isAdmin;
+    }
+    return true; // Admin sees all
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -64,7 +80,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
