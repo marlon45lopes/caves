@@ -1,4 +1,4 @@
-import { Calendar, Users, Building2, Stethoscope, Briefcase, Home, LogOut, FileText } from 'lucide-react';
+import { Calendar, Users, Building2, Stethoscope, Briefcase, Home, LogOut, FileText, Shield } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -26,6 +26,7 @@ const menuItems = [
   { title: 'Especialidades', url: '/especialidades', icon: Stethoscope },
   { title: 'Empresas', url: '/empresas', icon: Briefcase },
   { title: 'Relatório', url: '/relatorio', icon: FileText },
+  { title: 'Painel do Administrador', url: '/admin', icon: Shield },
 ];
 
 export function AppSidebar() {
@@ -39,6 +40,9 @@ export function AppSidebar() {
   const isClinica = profile?.role === 'CLINICA';
 
   const filteredMenuItems = menuItems.filter(item => {
+    if (item.title === 'Painel do Administrador') {
+      return isAdmin;
+    }
     if (isClinica) {
       return ['Dashboard', 'Agenda', 'Pacientes'].includes(item.title);
     }

@@ -23,6 +23,8 @@ DROP POLICY IF EXISTS "pacientes_delete_policy" ON public.pacientes;
 DROP POLICY IF EXISTS "agendamentos_select_policy" ON public.agendamentos;
 DROP POLICY IF EXISTS "agendamentos_insert_delete_policy" ON public.agendamentos;
 DROP POLICY IF EXISTS "agendamentos_update_policy" ON public.agendamentos;
+DROP POLICY IF EXISTS "usuarios_update_policy" ON public.usuarios;
+DROP POLICY IF EXISTS "usuarios_delete_policy" ON public.usuarios;
 
 -- 3. Helper Functions for RLS
 DROP FUNCTION IF EXISTS public.get_my_role();
@@ -98,6 +100,17 @@ CREATE POLICY "usuarios_select_policy"
 ON public.usuarios FOR SELECT
 TO authenticated
 USING (true);
+
+CREATE POLICY "usuarios_update_policy"
+ON public.usuarios FOR UPDATE
+TO authenticated
+USING (public.get_my_role() = 'ADMIN'::public.user_role)
+WITH CHECK (public.get_my_role() = 'ADMIN'::public.user_role);
+
+CREATE POLICY "usuarios_delete_policy"
+ON public.usuarios FOR DELETE
+TO authenticated
+USING (public.get_my_role() = 'ADMIN'::public.user_role);
 
 -- 7. Standardize Trigger for New Users
 CREATE OR REPLACE FUNCTION public.handle_new_user()

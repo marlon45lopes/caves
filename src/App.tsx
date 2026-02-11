@@ -13,6 +13,7 @@ import ClinicasPage from "./pages/ClinicasPage";
 import EspecialidadesPage from "./pages/EspecialidadesPage";
 import EmpresasPage from "./pages/EmpresasPage";
 import RelatorioPage from "./pages/RelatorioPage";
+import AdminPanelPage from "./pages/AdminPanelPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/especialidades" element={<ProtectedRoute><EspecialidadesPage /></ProtectedRoute>} />
             <Route path="/empresas" element={<ProtectedRoute><EmpresasPage /></ProtectedRoute>} />
             <Route path="/relatorio" element={<ProtectedRoute><RelatorioPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminPanelPage /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
