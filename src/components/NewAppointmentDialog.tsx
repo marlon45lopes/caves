@@ -15,6 +15,12 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/ui/tabs';
+import {
     Form,
     FormControl,
     FormField,
@@ -45,7 +51,14 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-import { usePatients, useClinics, useSpecialties, useCreateAppointment, usePendingPatientAppointments } from '@/hooks/useAppointments';
+import {
+    usePatients,
+    useClinics,
+    useSpecialties,
+    useCreateAppointment,
+    usePendingPatientAppointments,
+    usePatientHistoryAppointments
+} from '@/hooks/useAppointments';
 
 const formSchema = z.object({
     paciente_id: z.string().min(1, 'Selecione um paciente'),
@@ -164,6 +177,9 @@ export function NewAppointmentDialog({
     // Watch for patient selection to fetch pending appointments
     const selectedPatientId = form.watch('paciente_id');
     const { data: pendingAppointments, isLoading: pendingLoading } = usePendingPatientAppointments(selectedPatientId);
+    const { data: historyAppointments, isLoading: historyLoading } = usePatientHistoryAppointments(selectedPatientId);
+
+    const hasSidebarData = (pendingAppointments && pendingAppointments.length > 0) || (historyAppointments && historyAppointments.length > 0);
 
     const formatAppointmentDate = (dateStr: string) => {
         return format(new Date(dateStr + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR });
@@ -171,14 +187,14 @@ export function NewAppointmentDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className={selectedPatientId && pendingAppointments && pendingAppointments.length > 0 ? "sm:max-w-[800px]" : "sm:max-w-[425px]"}>
+            <DialogContent className={selectedPatientId && hasSidebarData ? "sm:max-w-[800px]" : "sm:max-w-[425px]"}>
                 <DialogHeader>
                     <DialogTitle>Novo Agendamento</DialogTitle>
                 </DialogHeader>
 
-                <div className={selectedPatientId && pendingAppointments && pendingAppointments.length > 0 ? "flex gap-6" : ""}>
+                <div className={selectedPatientId && hasSidebarData ? "flex gap-6" : ""}>
                     {/* Form Column */}
-                    <div className={selectedPatientId && pendingAppointments && pendingAppointments.length > 0 ? "flex-1" : "w-full"}>
+                    <div className={selectedPatientId && hasSidebarData ? "flex-1" : "w-full"}>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
@@ -452,51 +468,114 @@ export function NewAppointmentDialog({
                         </Form>
                     </div>
 
-                    {/* Pending Appointments Panel - Only show if patient selected and has pending appointments */}
-                    {selectedPatientId && pendingAppointments && pendingAppointments.length > 0 && (
-                        <div className="w-[280px] border-l pl-4">
-                            <h3 className="text-sm font-semibold text-orange-600 mb-3 flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                Agendamentos em Aberto ({pendingAppointments.length})
-                            </h3>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                                {pendingLoading ? (
-                                    <div className="flex items-center justify-center py-4">
-                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                                    </div>
-                                ) : (
-                                    pendingAppointments.map((apt: any) => (
-                                        <div
-                                            key={apt.id}
-                                            className="p-3 rounded-lg border bg-orange-50 border-orange-200 text-sm space-y-1"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-medium text-orange-700">
-                                                    {formatAppointmentDate(apt.data)}
-                                                </span>
-                                                <span className="text-orange-600 font-semibold">
-                                                    {apt.hora_inicio?.slice(0, 5)}
-                                                </span>
+                    {/* Sidebar Panel - Only show if patient selected and has appointments */}
+                    {selectedPatientId && hasSidebarData && (
+                        <div className="w-[320px] border-l pl-4">
+                            <Tabs defaultValue="pending" className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 mb-4">
+                                    <TabsTrigger value="pending" className="text-xs">Abertos</TabsTrigger>
+                                    <TabsTrigger value="history" className="text-xs">Histórico</TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="pending" className="mt-0">
+                                    <h3 className="text-sm font-semibold text-orange-600 mb-3 flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        Agendamentos em Aberto ({pendingAppointments?.length || 0})
+                                    </h3>
+                                    <div className="space-y-2 max-h-[460px] overflow-y-auto pr-2">
+                                        {pendingLoading ? (
+                                            <div className="flex items-center justify-center py-4">
+                                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                                             </div>
-                                            {apt.clinica?.nome && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    <strong>Clínica:</strong> {apt.clinica.nome}
-                                                </p>
-                                            )}
-                                            {apt.especialidade?.nome && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    <strong>Especialidade:</strong> {apt.especialidade.nome}
-                                                </p>
-                                            )}
-                                            {apt.observacoes && (
-                                                <p className="text-xs text-muted-foreground truncate" title={apt.observacoes}>
-                                                    <strong>Obs:</strong> {apt.observacoes}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+                                        ) : pendingAppointments && pendingAppointments.length > 0 ? (
+                                            pendingAppointments.map((apt: any) => (
+                                                <div
+                                                    key={apt.id}
+                                                    className="p-3 rounded-lg border bg-orange-50 border-orange-200 text-sm space-y-1"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-medium text-orange-700">
+                                                            {formatAppointmentDate(apt.data)}
+                                                        </span>
+                                                        <span className="text-orange-600 font-semibold">
+                                                            {apt.hora_inicio?.slice(0, 5)}
+                                                        </span>
+                                                    </div>
+                                                    {apt.clinica?.nome && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            <strong>Clínica:</strong> {apt.clinica.nome}
+                                                        </p>
+                                                    )}
+                                                    {apt.especialidade?.nome && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            <strong>Especialidade:</strong> {apt.especialidade.nome}
+                                                        </p>
+                                                    )}
+                                                    {apt.observacoes && (
+                                                        <p className="text-xs text-muted-foreground truncate" title={apt.observacoes}>
+                                                            <strong>Obs:</strong> {apt.observacoes}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground text-center py-4 italic">Nenhum agendamento futuro</p>
+                                        )}
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="history" className="mt-0">
+                                    <h3 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
+                                        <Check className="h-4 w-4" />
+                                        Histórico (últimos 6 meses)
+                                    </h3>
+                                    <div className="space-y-2 max-h-[460px] overflow-y-auto pr-2">
+                                        {historyLoading ? (
+                                            <div className="flex items-center justify-center py-4">
+                                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                            </div>
+                                        ) : historyAppointments && historyAppointments.length > 0 ? (
+                                            historyAppointments.map((apt: any) => (
+                                                <div
+                                                    key={apt.id}
+                                                    className="p-3 rounded-lg border bg-primary/5 border-primary/20 text-sm space-y-1"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-medium text-primary">
+                                                            {formatAppointmentDate(apt.data)}
+                                                        </span>
+                                                        <span className="text-muted-foreground font-semibold">
+                                                            {apt.hora_inicio?.slice(0, 5)}
+                                                        </span>
+                                                    </div>
+                                                    {apt.clinica?.nome && (
+                                                        <p className="text-xs">
+                                                            <strong>Clínica:</strong> {apt.clinica.nome}
+                                                        </p>
+                                                    )}
+                                                    {apt.profissional && (
+                                                        <p className="text-xs">
+                                                            <strong>Profissional:</strong> {apt.profissional}
+                                                        </p>
+                                                    )}
+                                                    {apt.especialidade?.nome && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            <strong>Especialidade:</strong> {apt.especialidade.nome}
+                                                        </p>
+                                                    )}
+                                                    {apt.observacoes && (
+                                                        <p className="text-xs text-muted-foreground" title={apt.observacoes}>
+                                                            <strong>Obs:</strong> {apt.observacoes}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground text-center py-4 italic">Nenhum atendimento nos últimos 6 meses</p>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
                         </div>
                     )}
                 </div>

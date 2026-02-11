@@ -497,3 +497,32 @@ export function usePendingPatientAppointments(patientId?: string) {
     enabled: !!patientId,
   });
 }
+export function usePatientHistoryAppointments(patientId?: string) {
+  return useQuery({
+    queryKey: ['patient-history-appointments', patientId],
+    queryFn: async () => {
+      if (!patientId) return [];
+
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const dateLimit = sixMonthsAgo.toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select(`
+          *,
+          clinica:clinicas(id, nome, endereco, telefone),
+          especialidade:especialidades(id, nome)
+        `)
+        .eq('paciente_id', patientId)
+        .eq('status', 'compareceu')
+        .gte('data', dateLimit)
+        .order('data', { ascending: false })
+        .order('hora_inicio', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!patientId,
+  });
+}
