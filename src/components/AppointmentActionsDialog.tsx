@@ -78,9 +78,9 @@ export function AppointmentActionsDialog({
     }
   };
 
-  const handleCancel = async () => {
+  const handleFaltou = async () => {
     try {
-      await updateStatus.mutateAsync({ id: appointment.id, status: 'cancelado' });
+      await updateStatus.mutateAsync({ id: appointment.id, status: 'faltou' });
       toast.success('Falta registrada com sucesso!');
       onOpenChange(false);
     } catch (error) {
@@ -234,7 +234,7 @@ export function AppointmentActionsDialog({
                 </Button>
                 <Button
                   className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
-                  onClick={handleCancel}
+                  onClick={handleFaltou}
                   disabled={updateStatus.isPending || deleteAppointment.isPending}
                 >
                   <XCircle className="h-4 w-4 mr-2" />

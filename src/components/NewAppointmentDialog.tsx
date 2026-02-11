@@ -538,11 +538,20 @@ export function NewAppointmentDialog({
                                             historyAppointments.map((apt: any) => (
                                                 <div
                                                     key={apt.id}
-                                                    className="p-3 rounded-lg border bg-primary/5 border-primary/20 text-sm space-y-1"
+                                                    className={cn(
+                                                        "p-3 rounded-lg border text-sm space-y-1",
+                                                        apt.status === 'compareceu'
+                                                            ? "bg-primary/5 border-primary/20"
+                                                            : "bg-red-50 border-red-200"
+                                                    )}
                                                 >
                                                     <div className="flex items-center justify-between">
-                                                        <span className="font-medium text-primary">
+                                                        <span className={cn(
+                                                            "font-medium",
+                                                            apt.status === 'compareceu' ? "text-primary" : "text-red-700"
+                                                        )}>
                                                             {formatAppointmentDate(apt.data)}
+                                                            {apt.status === 'faltou' && " (Faltou)"}
                                                         </span>
                                                         <span className="text-muted-foreground font-semibold">
                                                             {apt.hora_inicio?.slice(0, 5)}
@@ -563,11 +572,9 @@ export function NewAppointmentDialog({
                                                             <strong>Especialidade:</strong> {apt.especialidade.nome}
                                                         </p>
                                                     )}
-                                                    {apt.observacoes && (
-                                                        <p className="text-xs text-muted-foreground" title={apt.observacoes}>
-                                                            <strong>Obs:</strong> {apt.observacoes}
-                                                        </p>
-                                                    )}
+                                                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                                                        <strong>Observações:</strong> {apt.observacoes || "—"}
+                                                    </p>
                                                 </div>
                                             ))
                                         ) : (
