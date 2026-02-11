@@ -79,7 +79,7 @@ const AuthPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-15 w-15 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -92,7 +92,7 @@ const AuthPage = () => {
           <img
             src="/caves-logo.jpg"
             alt="CAVES"
-            className="h-16 w-16 object-contain"
+            className="h-32 w-32 object-contain"
           />
           <div>
             <h1 className="text-2xl font-bold text-foreground">CAVES</h1>
@@ -161,7 +161,12 @@ const AuthPage = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+  type="submit"
+  className="w-full bg-[#0B2A5B] hover:bg-[#091f42] text-white"
+  disabled={isLoading}
+>
+
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                   ) : (
@@ -177,7 +182,7 @@ const AuthPage = () => {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Sistema de gestão de agendamentos médicos
+          Sistema de gestão de agendamentos/exames médicos
         </p>
       </div>
     </div>
