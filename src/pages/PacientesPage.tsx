@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Phone, Mail, Building2, Edit, Trash2, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -10,6 +10,7 @@ import { PatientFormDialog } from '@/components/PatientFormDialog';
 import { useAuth } from '@/hooks/useAuth';
 import type { Patient } from '@/types/appointment';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,7 @@ const PacientesPage = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [deletePatient, setDeletePatient] = useState<Patient | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
   const navigate = useNavigate();
 
   const { profile } = useAuth();
@@ -57,10 +59,28 @@ const PacientesPage = () => {
       await deletePatientMutation.mutateAsync(deletePatient.id);
       toast.success('Paciente excluído com sucesso!');
       setDeletePatient(null);
+      setPendingCount(0);
     } catch (error) {
       toast.error('Erro ao excluir paciente');
     }
   };
+
+  // Check for pending appointments when a patient is selected for deletion
+  useEffect(() => {
+    if (!deletePatient) {
+      setPendingCount(0);
+      return;
+    }
+    const checkPending = async () => {
+      const { count } = await supabase
+        .from('agendamentos')
+        .select('*', { count: 'exact', head: true })
+        .eq('paciente_id', deletePatient.id)
+        .eq('status', 'agendado');
+      setPendingCount(count || 0);
+    };
+    checkPending();
+  }, [deletePatient]);
 
   const handleNewPatient = () => {
     if (!canModify) return;
@@ -186,8 +206,19 @@ const PacientesPage = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o paciente "{deletePatient?.nome}"? Esta ação não pode ser desfeita.
+            <AlertDialogDescription asChild>
+              <div>
+                {pendingCount > 0 ? (
+                  <>
+                    <p className="text-destructive font-semibold mb-2">
+                      ⚠️ Este paciente possui {pendingCount} agendamento{pendingCount > 1 ? 's' : ''} em aberto!
+                    </p>
+                    <p>Deseja prosseguir com a exclusão de "{deletePatient?.nome}"? Todos os agendamentos serão excluídos junto. Esta ação não pode ser desfeita.</p>
+                  </>
+                ) : (
+                  <p>Tem certeza que deseja excluir o paciente "{deletePatient?.nome}"? Esta ação não pode ser desfeita.</p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

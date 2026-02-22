@@ -221,6 +221,15 @@ export function useDeletePatient() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // First delete all appointments linked to this patient
+      const { error: appointmentsError } = await supabase
+        .from('agendamentos')
+        .delete()
+        .eq('paciente_id', id);
+
+      if (appointmentsError) throw appointmentsError;
+
+      // Then delete the patient
       const { error } = await supabase
         .from('pacientes')
         .delete()
@@ -230,6 +239,8 @@ export function useDeletePatient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
     },
   });
 }
