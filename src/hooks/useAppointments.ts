@@ -6,13 +6,17 @@ export function useAppointments(date?: string, clinicId?: string | null, special
   return useQuery({
     queryKey: ['appointments', date, clinicId, specialtyName],
     queryFn: async () => {
+      const specialtySelect = specialtyName && specialtyName !== 'all'
+        ? 'especialidade:especialidades!inner(id, nome)'
+        : 'especialidade:especialidades(id, nome)';
+
       let query = supabase
         .from('agendamentos')
         .select(`
           *,
           paciente:pacientes(id, nome, cpf, telefone, email, tipo_paciente),
           clinica:clinicas(id, nome, endereco, telefone),
-          especialidade:especialidades(id, nome)
+          ${specialtySelect}
         `)
         .order('hora_inicio', { ascending: true });
 

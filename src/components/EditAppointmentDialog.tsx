@@ -95,12 +95,12 @@ export function EditAppointmentDialog({
     }, [open, appointment, form]);
 
     const timeSlots = Array.from({ length: 24 }, (_, i) => {
-        const hour = Math.floor(i / 2) + 7;
+        const hour = Math.floor(i / 2) + 6; // Start at 06:00
         const minute = i % 2 === 0 ? '00' : '30';
         return `${String(hour).padStart(2, '0')}:${minute}`;
     }).filter(time => {
         const h = parseInt(time.split(':')[0]);
-        return h < 19;
+        return h <= 17; // End at 17:30
     });
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {

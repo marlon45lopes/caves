@@ -91,9 +91,35 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
     }
 
     if (appointment.observacoes) {
-        const splitObservacoes = doc.splitTextToSize(`Observações: ${appointment.observacoes}`, 170);
-        doc.text(splitObservacoes, 20, yPos);
-        yPos += (splitObservacoes.length * lineHeight);
+        const hasJustification = appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:');
+
+        if (hasJustification) {
+            const parts = appointment.observacoes.split('\n\n');
+            const justificationPart = parts[0];
+            const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
+
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(200, 0, 0); // Red for emphasis
+            const splitJustification = doc.splitTextToSize(justificationPart, 170);
+            doc.text(splitJustification, 20, yPos);
+            yPos += (splitJustification.length * lineHeight);
+
+            if (otherObs) {
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(0, 0, 0);
+                const splitOther = doc.splitTextToSize(`Outras Observações: ${otherObs}`, 170);
+                doc.text(splitOther, 20, yPos);
+                yPos += (splitOther.length * lineHeight);
+            }
+        } else {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(0, 0, 0);
+            const splitObservacoes = doc.splitTextToSize(`Observações: ${appointment.observacoes}`, 170);
+            doc.text(splitObservacoes, 20, yPos);
+            yPos += (splitObservacoes.length * lineHeight);
+        }
+
+        doc.setTextColor(0, 0, 0); // Reset color
     }
 
     // Footer
@@ -246,9 +272,18 @@ export const generateGuide = (appointment: Appointment) => {
         doc.text('Observações:', 15, serviceYPos);
         doc.setFont('helvetica', 'normal');
 
+        const hasJustification = appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:');
+        if (hasJustification) {
+            doc.setTextColor(200, 0, 0);
+            doc.setFont('helvetica', 'bold');
+        }
+
         const splitObs = doc.splitTextToSize(appointment.observacoes, 135);
         doc.text(splitObs, 55, serviceYPos);
         serviceYPos += (splitObs.length * 5);
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
     }
 
     // Draw the service box outline AFTER calculating content height

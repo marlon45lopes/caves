@@ -93,6 +93,11 @@ export function NewAppointmentDialog({
     const { data: specialties } = useSpecialties();
     const createAppointment = useCreateAppointment();
 
+    // Validity states
+    const [isBlocked, setIsBlocked] = useState(false);
+    const [isReleased, setIsReleased] = useState(false);
+    const [justificativa, setJustificativa] = useState('');
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -118,6 +123,9 @@ export function NewAppointmentDialog({
     // Update form values when initial props change
     useEffect(() => {
         if (open) {
+            setIsBlocked(false);
+            setIsReleased(false);
+            setJustificativa('');
             if (initialDate) {
                 form.setValue('data', initialDate);
             }
@@ -134,18 +142,23 @@ export function NewAppointmentDialog({
     }, [open, initialDate, initialTime, form]);
 
     const timeSlots = Array.from({ length: 24 }, (_, i) => {
-        const hour = Math.floor(i / 2) + 7; // Start at 07:00
+        const hour = Math.floor(i / 2) + 6; // Start at 06:00
         const minute = i % 2 === 0 ? '00' : '30';
         return `${String(hour).padStart(2, '0')}:${minute}`;
     }).filter(time => {
         const h = parseInt(time.split(':')[0]);
-        return h < 19; // End at 18:30
+        return h <= 17; // End at 17:30
     });
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             // Find selected patient to get empresa_id if available
             const selectedPatient = patients?.find(p => p.id === values.paciente_id);
+
+            let finalObservacoes = values.observacoes || '';
+            if (isReleased && justificativa) {
+                finalObservacoes = `LIBERADO COM JUSTIFICATIVA: ${justificativa}\n\n${finalObservacoes}`.trim();
+            }
 
             await createAppointment.mutateAsync({
                 paciente_id: values.paciente_id,
@@ -157,7 +170,7 @@ export function NewAppointmentDialog({
                 status: 'agendado',
                 empresa_id: selectedPatient?.empresa_id || null,
                 profissional: values.profissional,
-                observacoes: values.observacoes,
+                observacoes: finalObservacoes,
             });
 
             toast.success('Agendamento criado com sucesso!');
@@ -177,8 +190,33 @@ export function NewAppointmentDialog({
 
     // Watch for patient selection to fetch pending appointments
     const selectedPatientId = form.watch('paciente_id');
+    const selectedSpecialtyId = form.watch('especialidade_id');
     const { data: pendingAppointments, isLoading: pendingLoading } = usePendingPatientAppointments(selectedPatientId);
     const { data: historyAppointments, isLoading: historyLoading } = usePatientHistoryAppointments(selectedPatientId);
+
+    // Effect to check exam validity (6 months)
+    useEffect(() => {
+        if (!selectedPatientId || !selectedSpecialtyId || !specialties || !historyAppointments) {
+            setIsBlocked(false);
+            setIsReleased(false);
+            return;
+        }
+
+        const selectedSpec = specialties.find(s => s.id === selectedSpecialtyId);
+        if (selectedSpec?.tipo === 'EXAME') {
+            // historyAppointments already filtered for last 6 months by hook
+            const hasRecentExam = historyAppointments.some(apt => apt.especialidade_id === selectedSpecialtyId);
+            if (hasRecentExam) {
+                setIsBlocked(true);
+            } else {
+                setIsBlocked(false);
+                setIsReleased(false);
+            }
+        } else {
+            setIsBlocked(false);
+            setIsReleased(false);
+        }
+    }, [selectedPatientId, selectedSpecialtyId, specialties, historyAppointments]);
 
     const hasSidebarData = (pendingAppointments && pendingAppointments.length > 0) || (historyAppointments && historyAppointments.length > 0);
 
@@ -465,7 +503,6 @@ export function NewAppointmentDialog({
                                     />
                                 </div>
 
-                                {/* Observações */}
                                 <FormField
                                     control={form.control}
                                     name="observacoes"
@@ -484,11 +521,45 @@ export function NewAppointmentDialog({
                                     )}
                                 />
 
+                                {/* Alerta de Validade de Exame */}
+                                {isBlocked && !isReleased && (
+                                    <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
+                                        <p className="text-sm font-semibold text-destructive">
+                                            ⚠️ Este paciente já realizou este exame nos últimos 6 meses e ele ainda está na validade.
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            className="w-full"
+                                            onClick={() => setIsReleased(true)}
+                                        >
+                                            Liberar com Justificativa
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {isBlocked && isReleased && (
+                                    <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-2">
+                                        <FormLabel className="text-blue-700">Justificativa para liberação *</FormLabel>
+                                        <Textarea
+                                            placeholder="Descreva o motivo da liberação deste agendamento..."
+                                            className="resize-none h-20 border-blue-300"
+                                            value={justificativa}
+                                            onChange={(e) => setJustificativa(e.target.value)}
+                                        />
+                                        <p className="text-[10px] text-blue-600">A justificativa será incluída nas observações do agendamento.</p>
+                                    </div>
+                                )}
+
                                 <DialogFooter>
                                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                                         Cancelar
                                     </Button>
-                                    <Button type="submit" disabled={createAppointment.isPending}>
+                                    <Button
+                                        type="submit"
+                                        disabled={createAppointment.isPending || (isBlocked && !isReleased) || (isReleased && !justificativa.trim())}
+                                    >
                                         {createAppointment.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Agendar
                                     </Button>
@@ -615,7 +686,7 @@ export function NewAppointmentDialog({
                         </div>
                     )}
                 </div>
-            </DialogContent>
-        </Dialog>
+            </DialogContent >
+        </Dialog >
     );
 }

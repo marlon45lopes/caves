@@ -200,6 +200,21 @@ export function AppointmentActionsDialog({
                   </div>
                 )}
               </div>
+
+              {appointment.observacoes && (
+                <div className="mt-3 p-3 bg-white border border-destructive/20 rounded-md shadow-sm">
+                  <p className="text-[10px] font-bold text-destructive mb-1 uppercase tracking-widest flex items-center gap-1">
+                    <FileText className="h-3 w-3" />
+                    Observações / Justificativa
+                  </p>
+                  <p className={cn(
+                    "text-sm whitespace-pre-wrap leading-relaxed",
+                    appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:') ? "text-destructive font-semibold" : "text-foreground"
+                  )}>
+                    {appointment.observacoes}
+                  </p>
+                </div>
+              )}
             </div>
 
             <Separator />
