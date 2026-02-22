@@ -176,7 +176,19 @@ export function PatientFormDialog({
                   <FormItem>
                     <FormLabel>CPF</FormLabel>
                     <FormControl>
-                      <Input placeholder="000.000.000-00" {...field} />
+                      <Input
+                        placeholder="000.000.000-00"
+                        maxLength={14}
+                        value={field.value}
+                        onChange={(e) => {
+                          let digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                          let formatted = digits;
+                          if (digits.length > 3) formatted = digits.slice(0, 3) + '.' + digits.slice(3);
+                          if (digits.length > 6) formatted = digits.slice(0, 3) + '.' + digits.slice(3, 6) + '.' + digits.slice(6);
+                          if (digits.length > 9) formatted = digits.slice(0, 3) + '.' + digits.slice(3, 6) + '.' + digits.slice(6, 9) + '-' + digits.slice(9);
+                          field.onChange(formatted);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -190,7 +202,21 @@ export function PatientFormDialog({
                   <FormItem>
                     <FormLabel>Telefone</FormLabel>
                     <FormControl>
-                      <Input placeholder="(00) 00000-0000" {...field} />
+                      <Input
+                        placeholder="(00) 0 0000-0000"
+                        maxLength={16}
+                        value={field.value}
+                        onChange={(e) => {
+                          let digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                          let formatted = digits;
+                          if (digits.length > 0) formatted = '(' + digits.slice(0, 2);
+                          if (digits.length >= 2) formatted = '(' + digits.slice(0, 2) + ') ';
+                          if (digits.length > 2) formatted += digits.slice(2, 3);
+                          if (digits.length > 3) formatted += ' ' + digits.slice(3, 7);
+                          if (digits.length > 7) formatted += '-' + digits.slice(7);
+                          field.onChange(formatted);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
