@@ -35,6 +35,7 @@ import type { Specialty } from '@/types/appointment';
 
 const formSchema = z.object({
     nome: z.string().min(1, 'Nome é obrigatório'),
+    tipo: z.string().min(1, 'Tipo é obrigatório'),
     clinica_id: z.string().optional(),
     clinica_ids: z.array(z.string()).optional(),
 }).refine((data) => {
@@ -65,6 +66,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
         resolver: zodResolver(formSchema),
         defaultValues: {
             nome: '',
+            tipo: '',
             clinica_id: '',
             clinica_ids: [],
         },
@@ -74,12 +76,14 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
         if (specialty) {
             form.reset({
                 nome: specialty.nome,
+                tipo: specialty.tipo || '',
                 clinica_id: specialty.clinica_id || '',
                 clinica_ids: [],
             });
         } else {
             form.reset({
                 nome: '',
+                tipo: '',
                 clinica_id: '',
                 clinica_ids: [],
             });
@@ -96,6 +100,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
                 await updateSpecialty.mutateAsync({
                     id: specialty.id,
                     nome: values.nome,
+                    tipo: values.tipo,
                     clinica_id: values.clinica_id,
                 });
                 toast.success('Especialidade atualizada com sucesso!');
@@ -106,6 +111,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
                 }
                 await createSpecialty.mutateAsync({
                     nome: values.nome,
+                    tipo: values.tipo,
                     clinica_ids: values.clinica_ids,
                 });
                 toast.success('Especialidade(s) criada(s) com sucesso!');
@@ -137,6 +143,31 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
                                     <FormControl>
                                         <Input placeholder="Ex: Cardiologia" {...field} />
                                     </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="tipo"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tipo da Especialidade</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione o tipo" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="CONSULTA">CONSULTA</SelectItem>
+                                            <SelectItem value="EXAME">EXAME</SelectItem>
+                                            <SelectItem value="ADMISSIONAL">ADMISSIONAL</SelectItem>
+                                            <SelectItem value="DEMISSIONAL">DEMISSIONAL</SelectItem>
+                                            <SelectItem value="PSICOTESTE">PSICOTESTE</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -229,6 +260,6 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
                     </form>
                 </Form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

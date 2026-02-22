@@ -132,16 +132,19 @@ export type Database = {
           clinica_id: string | null
           id: string
           nome: string
+          tipo: string | null
         }
         Insert: {
           clinica_id?: string | null
           id?: string
           nome: string
+          tipo?: string | null
         }
         Update: {
           clinica_id?: string | null
           id?: string
           nome?: string
+          tipo?: string | null
         }
         Relationships: [
           {

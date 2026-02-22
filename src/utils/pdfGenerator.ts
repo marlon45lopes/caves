@@ -161,7 +161,7 @@ export const generateGuide = (appointment: Appointment) => {
     doc.setFont('helvetica', 'normal');
     doc.text(appointment.paciente?.telefone || '', 35, yPos);
 
-    const tipoPaciente = (appointment.paciente as any)?.tipo_paciente;
+    const tipoPaciente = appointment.paciente?.tipo_paciente;
     if (tipoPaciente) {
         doc.setFont('helvetica', 'bold');
         doc.text('Tipo:', 100, yPos);

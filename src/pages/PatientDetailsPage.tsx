@@ -34,6 +34,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { usePatient, usePatientAppointments, useDeletePatient } from '@/hooks/useAppointments';
+import { useAuth } from '@/hooks/useAuth';
 import { PatientFormDialog } from '@/components/PatientFormDialog';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Loader2 } from 'lucide-react';
@@ -46,9 +47,17 @@ export default function PatientDetailsPage() {
     const { data: patient, isLoading: isLoadingPatient } = usePatient(id);
     const { data: appointments, isLoading: isLoadingAppointments } = usePatientAppointments(id);
     const deletePatient = useDeletePatient();
+    const { profile } = useAuth();
+
+    const isAdmin = profile?.role === 'ADMIN';
+    const isAtendente = profile?.role === 'ATENDENTE';
+    const canModify = isAdmin || isAtendente;
+
+    const pendingAppointments = appointments?.filter(a => a.status === 'agendado') || [];
+    const pendingCount = pendingAppointments.length;
 
     const handleDeletePatient = async () => {
-        if (!id) return;
+        if (!id || !canModify) return;
         try {
             await deletePatient.mutateAsync(id);
             navigate('/pacientes');
@@ -109,31 +118,46 @@ export default function PatientDetailsPage() {
                             </div>
                             <CardTitle>{patient.nome}</CardTitle>
                             <div className="flex justify-center gap-2 mt-4">
-                                <Button variant="outline" size="sm" className="gap-2" onClick={() => setEditDialogOpen(true)}>
-                                    <Edit className="h-4 w-4" />
-                                    Editar Dados
-                                </Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Excluir Paciente</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Tem certeza que deseja excluir o paciente <strong>{patient.nome}</strong>? Esta ação não pode ser desfeita.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleDeletePatient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                                Excluir
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                {canModify && (
+                                    <Button variant="outline" size="sm" className="gap-2" onClick={() => setEditDialogOpen(true)}>
+                                        <Edit className="h-4 w-4" />
+                                        Editar Dados
+                                    </Button>
+                                )}
+                                {canModify && (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Excluir Paciente</AlertDialogTitle>
+                                                <AlertDialogDescription asChild>
+                                                    <div>
+                                                        {pendingCount > 0 ? (
+                                                            <>
+                                                                <p className="text-destructive font-semibold mb-2">
+                                                                    ⚠️ Este paciente possui {pendingCount} agendamento{pendingCount > 1 ? 's' : ''} em aberto!
+                                                                </p>
+                                                                <p>Deseja prosseguir com a exclusão de <strong>{patient.nome}</strong>? Todos os agendamentos serão excluídos junto. Esta ação não pode ser desfeita.</p>
+                                                            </>
+                                                        ) : (
+                                                            <p>Tem certeza que deseja excluir o paciente <strong>{patient.nome}</strong>? Esta ação não pode ser desfeita.</p>
+                                                        )}
+                                                    </div>
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleDeletePatient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                    Excluir
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                )}
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">

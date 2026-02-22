@@ -113,7 +113,14 @@ const EspecialidadesPage = () => {
                         setDialogOpen(true);
                       }}
                     >
-                      <h4 className="font-medium text-foreground text-sm">{specialty.nome}</h4>
+                      <div className="flex flex-col gap-1 items-start">
+                        <h4 className="font-medium text-foreground text-sm">{specialty.nome}</h4>
+                        {specialty.tipo && (
+                          <Badge variant="outline" className="text-[10px] h-4 px-1 bg-primary/5 text-primary border-primary/20">
+                            {specialty.tipo}
+                          </Badge>
+                        )}
+                      </div>
                     </Card>
                   ))}
                 </div>

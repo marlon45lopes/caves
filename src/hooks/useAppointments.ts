@@ -402,9 +402,10 @@ export function useCreateSpecialty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ nome, clinica_ids }: { nome: string; clinica_ids: string[] }) => {
+    mutationFn: async ({ nome, tipo, clinica_ids }: { nome: string; tipo: string; clinica_ids: string[] }) => {
       const records = clinica_ids.map((id) => ({
         nome,
+        tipo,
         clinica_id: id,
       }));
 
@@ -426,7 +427,7 @@ export function useUpdateSpecialty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...specialty }: { id: string; nome: string; clinica_id: string }) => {
+    mutationFn: async ({ id, ...specialty }: { id: string; nome: string; tipo: string; clinica_id: string }) => {
       const { data, error } = await supabase
         .from('especialidades')
         .update(specialty)

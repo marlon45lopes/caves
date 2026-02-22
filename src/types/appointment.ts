@@ -60,6 +60,7 @@ export interface Specialty {
   id: string;
   nome: string;
   clinica_id: string | null;
+  tipo: string | null;
 }
 
 export interface Company {
