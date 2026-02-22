@@ -8,9 +8,27 @@ import { useClinics } from '@/hooks/useAppointments';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, isAfter, isBefore, parseISO } from 'date-fns';
-import { Calendar as CalendarIcon, FileDown, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, FileDown, Trash2, Search, Check, ChevronsUpDown, User } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger
+} from '@/components/ui/tabs';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { usePatients } from '@/hooks/useAppointments';
+import { cn } from '@/lib/utils';
+import { generatePatientHistoryReport } from '@/utils/pdfGenerator';
 
 interface ReportData {
     clinicName: string;
@@ -30,7 +48,14 @@ const RelatorioPage = () => {
     const [reportData, setReportData] = useState<ReportData | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
 
+    // Patient Report State
+    const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+    const [patientOpen, setPatientOpen] = useState(false);
+    const [patientHistory, setPatientHistory] = useState<any[] | null>(null);
+    const [activeTab, setActiveTab] = useState<string>('periodic');
+
     const { data: clinics } = useClinics(true);
+    const { data: patients } = usePatients();
 
     const validateDates = () => {
         if (!startDate || !endDate) return false;
@@ -95,11 +120,64 @@ const RelatorioPage = () => {
         }
     };
 
+    const handleGeneratePatientReport = async () => {
+        if (!selectedPatientId) {
+            toast.error('Por favor, selecione um paciente');
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const { data, error } = await supabase
+                .from('agendamentos')
+                .select(`
+                    *,
+                    clinica:clinicas(nome),
+                    especialidade:especialidades(nome)
+                `)
+                .eq('paciente_id', selectedPatientId)
+                .order('data', { ascending: false });
+
+            if (error) throw error;
+
+            setPatientHistory(data as any[]);
+            toast.success('Histórico do paciente carregado!');
+        } catch (error) {
+            console.error('Error fetching patient history:', error);
+            toast.error('Erro ao carregar histórico');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const handleClear = () => {
         setSelectedClinicId('');
         setStartDate('');
         setEndDate('');
         setReportData(null);
+        setSelectedPatientId('');
+        setPatientHistory(null);
+    };
+
+    const downloadPatientPDF = () => {
+        try {
+            if (!patientHistory || !selectedPatientId) {
+                toast.error('Nenhum histórico disponível para download');
+                return;
+            }
+            const patient = patients?.find(p => p.id === selectedPatientId);
+            if (!patient) {
+                toast.error('Paciente não encontrado');
+                return;
+            }
+
+            toast.info('Gerando PDF do histórico...');
+            generatePatientHistoryReport(patient, patientHistory);
+            toast.success('Download do histórico iniciado!');
+        } catch (error) {
+            console.error('Error generating patient history PDF:', error);
+            toast.error('Erro ao gerar PDF do histórico');
+        }
     };
 
     const downloadPDF = () => {
@@ -143,66 +221,152 @@ const RelatorioPage = () => {
     return (
         <Layout title="Relatórios">
             <div className="space-y-6 max-w-5xl mx-auto">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Configurar Filtros</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div className="space-y-2">
-                                <Label htmlFor="clinic">Clínica/Empresa *</Label>
-                                <Select value={selectedClinicId} onValueChange={setSelectedClinicId}>
-                                    <SelectTrigger id="clinic">
-                                        <SelectValue placeholder="Selecione a clínica" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {clinics?.map((clinic) => (
-                                            <SelectItem key={clinic.id} value={clinic.id}>
-                                                {clinic.nome}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="startDate">Data Inicial *</Label>
-                                <div className="relative">
-                                    <input
-                                        id="startDate"
-                                        type="date"
-                                        className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="endDate">Data Final *</Label>
-                                <div className="relative">
-                                    <input
-                                        id="endDate"
-                                        type="date"
-                                        className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex gap-3 mt-6 justify-end">
-                            <Button variant="outline" onClick={handleClear} className="gap-2">
-                                <Trash2 className="h-4 w-4" />
-                                Limpar filtros
-                            </Button>
-                            <Button onClick={handleGenerateReport} disabled={isGenerating} className="gap-2">
-                                <CalendarIcon className="h-4 w-4" />
-                                {isGenerating ? 'Gerando...' : 'Gerar relatório'}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="periodic">Relatório Periódico</TabsTrigger>
+                        <TabsTrigger value="patient">Relatório por Paciente</TabsTrigger>
+                    </TabsList>
 
-                {reportData && (
+                    <TabsContent value="periodic">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary flex items-center gap-2">
+                                    <FileDown className="h-5 w-5" />
+                                    Configurar Filtros Periódicos
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="clinic">Clínica/Empresa *</Label>
+                                        <Select value={selectedClinicId} onValueChange={setSelectedClinicId}>
+                                            <SelectTrigger id="clinic">
+                                                <SelectValue placeholder="Selecione a clínica" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {clinics?.map((clinic) => (
+                                                    <SelectItem key={clinic.id} value={clinic.id}>
+                                                        {clinic.nome}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="startDate">Data Inicial *</Label>
+                                        <div className="relative">
+                                            <input
+                                                id="startDate"
+                                                type="date"
+                                                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                value={startDate}
+                                                onChange={(e) => setStartDate(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="endDate">Data Final *</Label>
+                                        <div className="relative">
+                                            <input
+                                                id="endDate"
+                                                type="date"
+                                                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                value={endDate}
+                                                onChange={(e) => setEndDate(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3 mt-6 justify-end">
+                                    <Button variant="outline" onClick={handleClear} className="gap-2">
+                                        <Trash2 className="h-4 w-4" />
+                                        Limpar filtros
+                                    </Button>
+                                    <Button onClick={handleGenerateReport} disabled={isGenerating} className="gap-2">
+                                        <CalendarIcon className="h-4 w-4" />
+                                        {isGenerating ? 'Gerando...' : 'Gerar relatório'}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="patient">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary flex items-center gap-2">
+                                    <User className="h-5 w-5" />
+                                    Relatório de Histórico do Paciente
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                    <div className="space-y-2">
+                                        <Label>Selecionar Paciente *</Label>
+                                        <Popover open={patientOpen} onOpenChange={setPatientOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={patientOpen}
+                                                    className="w-full justify-between"
+                                                >
+                                                    {selectedPatientId
+                                                        ? patients?.find((p) => p.id === selectedPatientId)?.nome
+                                                        : "Pesquisar paciente..."}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[400px] p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Digite o nome ou CPF..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {patients?.map((p) => (
+                                                                <CommandItem
+                                                                    key={p.id}
+                                                                    value={`${p.nome} ${p.cpf || ''}`}
+                                                                    onSelect={() => {
+                                                                        setSelectedPatientId(p.id);
+                                                                        setPatientOpen(false);
+                                                                    }}
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            selectedPatientId === p.id ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    <div className="flex flex-col">
+                                                                        <span>{p.nome}</span>
+                                                                        {p.cpf && <span className="text-xs text-muted-foreground">CPF: {p.cpf}</span>}
+                                                                    </div>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <div className="flex gap-3 justify-start">
+                                        <Button variant="outline" onClick={handleClear} className="gap-2">
+                                            <Trash2 className="h-4 w-4" />
+                                            Limpar
+                                        </Button>
+                                        <Button onClick={handleGeneratePatientReport} disabled={isGenerating || !selectedPatientId} className="gap-2 bg-primary">
+                                            <Search className="h-4 w-4" />
+                                            {isGenerating ? 'Buscando...' : 'Buscar Histórico'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+
+                {activeTab === 'periodic' && reportData && (
                     <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <CardHeader className="border-b bg-muted/30">
                             <div className="flex justify-between items-center">
@@ -264,6 +428,77 @@ const RelatorioPage = () => {
                                         </tr>
                                     </tfoot>
                                 </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {activeTab === 'patient' && patientHistory && (
+                    <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <CardHeader className="border-b bg-muted/30">
+                            <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                    <CardTitle className="text-xl">Histórico Completo</CardTitle>
+                                    <p className="text-sm text-muted-foreground">
+                                        {patients?.find(p => p.id === selectedPatientId)?.nome}
+                                    </p>
+                                </div>
+                                <Button onClick={downloadPatientPDF} variant="secondary" className="gap-2">
+                                    <FileDown className="h-4 w-4" />
+                                    Download PDF Completo
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <div className="rounded-md border overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted">
+                                            <tr className="border-b">
+                                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data</th>
+                                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Clínica/Empresa</th>
+                                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Especialidade</th>
+                                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+                                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Profissional</th>
+                                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Observações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {patientHistory.length > 0 ? (
+                                                patientHistory.map((apt) => (
+                                                    <tr key={apt.id} className="hover:bg-muted/50 transition-colors">
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            {format(new Date(apt.data + 'T00:00:00'), 'dd/MM/yyyy')}
+                                                        </td>
+                                                        <td className="px-4 py-3 font-medium">{apt.clinica?.nome || '-'}</td>
+                                                        <td className="px-4 py-3">{apt.especialidade?.nome || '-'}</td>
+                                                        <td className="px-4 py-3">
+                                                            <span className={cn(
+                                                                "px-2 py-1 rounded-full text-[10px] font-bold uppercase",
+                                                                apt.status === 'compareceu' ? "bg-green-100 text-green-700" :
+                                                                    apt.status === 'faltou' ? "bg-red-100 text-red-700" :
+                                                                        "bg-blue-100 text-blue-700"
+                                                            )}>
+                                                                {apt.status === 'compareceu' ? 'Compareceu' :
+                                                                    apt.status === 'faltou' ? 'Faltou' : apt.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap">{apt.profissional || '-'}</td>
+                                                        <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate" title={apt.observacoes}>
+                                                            {apt.observacoes || '-'}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground italic">
+                                                        Nenhum registro encontrado para este paciente.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

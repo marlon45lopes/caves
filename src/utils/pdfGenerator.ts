@@ -1,6 +1,6 @@
 
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Appointment } from '@/types/appointment';
@@ -377,5 +377,88 @@ export const generateGuide = (appointment: Appointment) => {
 
     // Save
     const fileName = `guia_${appointment.paciente?.nome?.replace(/\s+/g, '_') || 'atendimento'}_${appointment.data}.pdf`;
+    doc.save(fileName);
+};
+
+export const generatePatientHistoryReport = (patient: any, appointments: any[]) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const timestamp = format(new Date(), 'dd/MM/yyyy HH:mm');
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Histórico do Paciente', pageWidth / 2, 20, { align: 'center' });
+
+    // Patient Info Box
+    doc.setDrawColor(200);
+    doc.setFillColor(245, 245, 245);
+    doc.rect(14, 30, pageWidth - 28, 35, 'F');
+    doc.rect(14, 30, pageWidth - 28, 35);
+
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+
+    let yPos = 40;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nome:', 20, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(patient.nome || 'Não informado', 45, yPos);
+
+    yPos += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.text('CPF:', 20, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(patient.cpf || 'Não informado', 45, yPos);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tipo:', 110, yPos);
+    doc.setFont('helvetica', 'normal');
+    const tipoLabel = patient.tipo_paciente === 'EXTRAORDINARIO' ? 'EXTRAORDINÁRIO' : (patient.tipo_paciente || 'Não informado');
+    doc.text(tipoLabel, 130, yPos);
+
+    yPos += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Telefone:', 20, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(patient.telefone || 'Não informado', 45, yPos);
+
+    // Table
+    autoTable(doc, {
+        startY: 75,
+        head: [['Data', 'Clínica', 'Especialidade', 'Status', 'Profissional', 'Observações']],
+        body: appointments.map(apt => [
+            apt.data ? format(new Date(apt.data + 'T00:00:00'), 'dd/MM/yyyy') : '-',
+            apt.clinica?.nome || '-',
+            apt.especialidade?.nome || '-',
+            apt.status === 'compareceu' ? 'Compareceu' : (apt.status === 'faltou' ? 'Faltou' : (apt.status === 'agendado' ? 'Agendado' : apt.status)),
+            apt.profissional || '-',
+            apt.observacoes || '-'
+        ]),
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+        columnStyles: {
+            0: { cellWidth: 20 },
+            1: { cellWidth: 35 },
+            2: { cellWidth: 35 },
+            3: { cellWidth: 20 },
+            4: { cellWidth: 30 },
+            5: { cellWidth: 'auto' }
+        },
+        styles: { fontSize: 8, overflow: 'linebreak' },
+        theme: 'grid'
+    });
+
+    // Footer
+    const pageCount = (doc as any).getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        const pageHeight = doc.internal.pageSize.height;
+        doc.text(`Gerado em: ${timestamp}`, 14, pageHeight - 10);
+        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
+    }
+
+    const fileName = `Historico_${patient.nome?.replace(/\s+/g, '_') || 'Paciente'}.pdf`;
     doc.save(fileName);
 };
