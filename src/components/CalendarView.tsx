@@ -76,6 +76,81 @@ export function CalendarView() {
     return appointments.filter((apt) => apt.data === dateStr);
   };
 
+  const getPositionedAppointments = (date: Date) => {
+    const dayAppointments = getAppointmentsForDate(date);
+    if (!dayAppointments.length) return [];
+
+    // 1. Initial positioning and sorting
+    const items = dayAppointments.map(apt => {
+      let startMinutes: number;
+      let duration: number;
+
+      if (apt.inicio_em && apt.fim_em) {
+        const start = new Date(apt.inicio_em);
+        const end = new Date(apt.fim_em);
+        startMinutes = start.getHours() * 60 + start.getMinutes();
+        duration = (end.getTime() - start.getTime()) / 60000;
+      } else {
+        startMinutes = getMinutes(apt.hora_inicio);
+        duration = apt.duracao_minutos || 30;
+      }
+
+      return {
+        ...apt,
+        startMinutes,
+        endMinutes: startMinutes + duration,
+        top: (startMinutes - CALENDAR_START_MINUTES) * PIXELS_PER_MINUTE,
+        height: Math.max(duration * PIXELS_PER_MINUTE, 25),
+      };
+    }).sort((a, b) => a.startMinutes - b.startMinutes || b.duration - a.duration);
+
+    // 2. Group into clusters of overlapping appointments
+    const clusters: any[][] = [];
+    let currentCluster: any[] = [];
+    let clusterEnd = 0;
+
+    items.forEach(item => {
+      if (item.startMinutes < clusterEnd) {
+        currentCluster.push(item);
+        clusterEnd = Math.max(clusterEnd, item.endMinutes);
+      } else {
+        if (currentCluster.length > 0) clusters.push(currentCluster);
+        currentCluster = [item];
+        clusterEnd = item.endMinutes;
+      }
+    });
+    if (currentCluster.length > 0) clusters.push(currentCluster);
+
+    // 3. For each cluster, assign columns
+    const results: any[] = [];
+    clusters.forEach(cluster => {
+      const columns: any[][] = [];
+      cluster.forEach(item => {
+        let placed = false;
+        for (let i = 0; i < columns.length; i++) {
+          const lastInCol = columns[i][columns[i].length - 1];
+          if (item.startMinutes >= lastInCol.endMinutes) {
+            columns[i].push(item);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) columns.push([item]);
+      });
+
+      cluster.forEach(item => {
+        const colIndex = columns.findIndex(col => col.includes(item));
+        results.push({
+          ...item,
+          colIndex,
+          totalCols: columns.length
+        });
+      });
+    });
+
+    return results;
+  };
+
   const navigate = (direction: 'prev' | 'next') => {
     if (viewMode === 'week') {
       setCurrentDate(direction === 'prev' ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
@@ -98,19 +173,17 @@ export function CalendarView() {
     setNewAppointmentOpen(true);
   };
 
-  const getAppointmentsForSlot = (date: Date, hour: number) => {
-    if (!appointments) return [];
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return appointments.filter((apt) => {
-      if (apt.data !== dateStr) return false;
-      if (!apt.hora_inicio) return false;
-      const aptHour = parseInt(apt.hora_inicio.split(':')[0]);
-      return aptHour === hour;
-    });
+  const hours = Array.from({ length: 12 }, (_, i) => 6 + i); // 06:00 to 17:00
+
+  const getMinutes = (timeStr: string | null) => {
+    if (!timeStr) return 480; // Default 8:00
+    const [h, m] = timeStr.split(':').map(Number);
+    return h * 60 + m;
   };
 
-  const hours = Array.from({ length: 12 }, (_, i) => 6 + i); // 06:00 to 17:00
-  const timeSlots = hours.map(h => `${String(h).padStart(2, '0')}:00`);
+  const PIXELS_PER_HOUR = 100;
+  const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60;
+  const CALENDAR_START_MINUTES = 360; // 06:00
 
   return (
     <div className="space-y-4">
@@ -192,129 +265,142 @@ export function CalendarView() {
         </div>
       </div>
 
-      {/* Calendar Grid */}
-
-      {viewMode === 'week' ? (
-        <Card className="overflow-hidden">
-          <div className="max-h-[600px] overflow-y-auto">
-            {/* Header with days - Sticky */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b sticky top-0 z-10 bg-card">
-              <div className="p-2 border-r bg-secondary/30 flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">Hora</span>
-              </div>
-              {weekDays.map((day, index) => {
-                const isToday = isSameDay(day, new Date());
-                return (
-                  <div
-                    key={index}
-                    className={cn(
-                      'p-4 text-center border-r last:border-r-0',
-                      isToday && 'bg-primary/5'
-                    )}
-                  >
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {format(day, 'EEE', { locale: ptBR })}
-                    </p>
-                    <p
+      <Card className="overflow-hidden">
+        <div className="max-h-[700px] overflow-y-auto">
+          {viewMode === 'week' ? (
+            <div className="min-w-[800px]">
+              {/* Header with days */}
+              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b sticky top-0 z-20 bg-card">
+                <div className="p-2 border-r bg-secondary/30 flex items-center justify-center">
+                  <span className="text-xs text-muted-foreground">Hora</span>
+                </div>
+                {weekDays.map((day, index) => {
+                  const isToday = isSameDay(day, new Date());
+                  return (
+                    <div
+                      key={index}
                       className={cn(
-                        'text-2xl font-semibold mt-1',
-                        isToday
-                          ? 'text-primary-foreground bg-primary w-10 h-10 rounded-full flex items-center justify-center mx-auto'
-                          : 'text-foreground'
+                        'p-4 text-center border-r last:border-r-0',
+                        isToday && 'bg-primary/5'
                       )}
                     >
-                      {format(day, 'd')}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Time slots with appointments */}
-            <div>
-              {hours.map((hour) => (
-                <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b last:border-b-0">
-                  <div className="py-3 px-2 text-xs text-muted-foreground border-r bg-secondary/30 flex items-start justify-center">
-                    {`${String(hour).padStart(2, '0')}:00`}
-                  </div>
-                  {weekDays.map((day, dayIndex) => {
-                    const slotAppointments = getAppointmentsForSlot(day, hour);
-                    const timeString = `${hour.toString().padStart(2, '0')}:00`;
-
-                    return (
-                      <div
-                        key={`${format(day, 'yyyy-MM-dd')}-${hour}`}
-                        className="min-h-[120px] h-full border-b border-r p-1 hover:bg-accent/10 transition-colors flex gap-1 group overflow-hidden"
-                        onClick={(e) => {
-                          // Only trigger if clicking the container directly
-                          if (e.target === e.currentTarget && canCreateAppointment) {
-                            handleNewAppointment(day, timeString);
-                          }
-                        }}
-                      >
-                        {isLoading ? (
-                          <div className="animate-pulse h-full w-full bg-muted rounded" />
-                        ) : (
-                          <>
-                            {slotAppointments?.map((appointment: any) => (
-                              <div key={appointment.id} className="flex-1 min-w-0 h-full">
-                                <AppointmentCard
-                                  appointment={appointment as Appointment}
-                                  variant="compact"
-                                  onClick={() => {
-                                    setSelectedAppointment(appointment as Appointment);
-                                    setDialogOpen(true);
-                                  }}
-                                />
-                              </div>
-                            ))}
-                            {canCreateAppointment && (
-                              <div
-                                className="min-w-[40px] flex-1 h-full cursor-pointer hover:bg-accent/5 transition-colors"
-                                title="Clique para adicionar novo agendamento"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleNewAppointment(day, timeString);
-                                }}
-                              />
-                            )}
-                          </>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {format(day, 'EEE', { locale: ptBR })}
+                      </p>
+                      <p
+                        className={cn(
+                          'text-2xl font-semibold mt-1',
+                          isToday
+                            ? 'text-primary-foreground bg-primary w-10 h-10 rounded-full flex items-center justify-center mx-auto'
+                            : 'text-foreground'
                         )}
+                      >
+                        {format(day, 'd')}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Grid Body */}
+              <div className="relative">
+                {/* Background Grid Lines */}
+                {hours.map((hour) => (
+                  <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b last:border-b-0 h-[100px]">
+                    <div className="py-3 px-2 text-xs text-muted-foreground border-r bg-secondary/30 flex items-start justify-center">
+                      {`${String(hour).padStart(2, '0')}:00`}
+                    </div>
+                    {weekDays.map((_, dayIndex) => (
+                      <div
+                        key={dayIndex}
+                        className="border-r last:border-r-0 h-full hover:bg-accent/5 transition-colors cursor-pointer"
+                        onClick={() => canCreateAppointment && handleNewAppointment(weekDays[dayIndex], `${String(hour).padStart(2, '0')}:00`)}
+                      />
+                    ))}
+                  </div>
+                ))}
+
+                {/* Appointments Overlay */}
+                <div className="absolute top-0 left-[60px] right-0 bottom-0 pointer-events-none grid grid-cols-7">
+                  {weekDays.map((day, dayIndex) => {
+                    const positionedAppointments = getPositionedAppointments(day);
+                    return (
+                      <div key={format(day, 'yyyy-MM-dd')} className="relative h-full border-r last:border-r-0 pointer-events-auto">
+                        {positionedAppointments.map((apt: any) => {
+                          const width = 100 / apt.totalCols;
+                          const left = apt.colIndex * width;
+
+                          return (
+                            <div
+                              key={apt.id}
+                              className="absolute z-10"
+                              style={{
+                                top: `${apt.top}px`,
+                                height: `${apt.height}px`,
+                                left: `${left}%`,
+                                width: `${width}%`,
+                                padding: '1px'
+                              }}
+                            >
+                              <AppointmentCard
+                                appointment={apt}
+                                variant="compact"
+                                onClick={() => handleAppointmentClick(apt)}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </Card>
-      ) : (
-        <Card className="overflow-hidden">
-          <div className="divide-y">
-            {timeSlots.map((time) => {
-              const dayAppointments = getAppointmentsForDate(currentDate).filter(
-                (apt) => apt.hora_inicio?.slice(0, 2) === time.slice(0, 2)
-              );
-              return (
-                <div key={time} className="flex">
+          ) : (
+            <div className="relative">
+              {/* Day View Background */}
+              {hours.map((hour) => (
+                <div key={hour} className="flex border-b last:border-b-0 h-[100px]">
                   <div className="w-20 py-4 px-3 text-sm text-muted-foreground border-r bg-secondary/30">
-                    {time}
+                    {`${String(hour).padStart(2, '0')}:00`}
                   </div>
-                  <div className="flex-1 p-2 min-h-[60px]">
-                    {dayAppointments.map((apt: any) => (
-                      <AppointmentCard
-                        key={apt.id}
-                        appointment={apt as Appointment}
-                        onClick={() => handleAppointmentClick(apt as Appointment)}
-                      />
-                    ))}
-                  </div>
+                  <div
+                    className="flex-1 hover:bg-accent/5 transition-colors cursor-pointer"
+                    onClick={() => canCreateAppointment && handleNewAppointment(currentDate, `${String(hour).padStart(2, '0')}:00`)}
+                  />
                 </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
+              ))}
+
+              {/* Day View Appointments Overlay */}
+              <div className="absolute top-0 left-20 right-0 bottom-0 pointer-events-none">
+                {getPositionedAppointments(currentDate).map((apt: any) => {
+                  const width = 100 / apt.totalCols;
+                  const left = apt.colIndex * width;
+
+                  return (
+                    <div
+                      key={apt.id}
+                      className="absolute z-10 pointer-events-auto"
+                      style={{
+                        top: `${apt.top}px`,
+                        height: `${apt.height}px`,
+                        left: `${left}%`,
+                        width: `${width}%`,
+                        padding: '2px'
+                      }}
+                    >
+                      <AppointmentCard
+                        appointment={apt}
+                        onClick={() => handleAppointmentClick(apt)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
 
       <AppointmentActionsDialog
         appointment={selectedAppointment}

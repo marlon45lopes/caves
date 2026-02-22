@@ -188,17 +188,44 @@ export function EditAppointmentDialog({
         setBlockReason(null);
     }, [selectedPatientId, selectedSpecialtyId, specialties, historyAppointments, appointment.id]);
 
-    const timeSlots = Array.from({ length: 24 }, (_, i) => {
-        const hour = Math.floor(i / 2) + 6; // Start at 06:00
-        const minute = i % 2 === 0 ? '00' : '30';
-        return `${String(hour).padStart(2, '0')}:${minute}`;
+    const timeSlots = Array.from({ length: 48 }, (_, i) => {
+        const hour = Math.floor(i / 4) + 6; // Start at 06:00
+        const minute = (i % 4) * 15;
+        return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     }).filter(time => {
         const h = parseInt(time.split(':')[0]);
-        return h <= 17; // End at 17:30
+        return h <= 18; // End at 18:00
     });
+
+    // Update hora_fim when hora_inicio or especialidade_id changes
+    useEffect(() => {
+        const hora_inicio = form.watch('hora_inicio');
+        const specialtyId = form.watch('especialidade_id');
+
+        if (hora_inicio && specialtyId && specialties) {
+            const spec = specialties.find(s => s.id === specialtyId);
+            const duration = spec?.duracao_minutos || 30;
+
+            const [hours, minutes] = hora_inicio.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+
+            const endDate = new Date(date.getTime() + duration * 60000);
+            const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+
+            form.setValue('hora_fim', endTime);
+        }
+    }, [form.watch('hora_inicio'), form.watch('especialidade_id'), specialties]);
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
+            const selectedSpec = specialties?.find(s => s.id === values.especialidade_id);
+            const duration = selectedSpec?.duracao_minutos || 30;
+
+            const dateStr = format(values.data, 'yyyy-MM-dd');
+            const inicio_em = new Date(`${dateStr}T${values.hora_inicio}:00`).toISOString();
+            const fim_em = new Date(`${dateStr}T${values.hora_fim}:00`).toISOString();
+
             let finalObservacoes = values.observacoes || '';
             if (isReleased && justificativa) {
                 finalObservacoes = `LIBERADO COM JUSTIFICATIVA: ${justificativa}\n\n${finalObservacoes}`.trim();
@@ -208,9 +235,12 @@ export function EditAppointmentDialog({
                 id: appointment.id,
                 clinica_id: values.clinica_id,
                 especialidade_id: values.especialidade_id,
-                data: format(values.data, 'yyyy-MM-dd'),
+                data: dateStr,
                 hora_inicio: values.hora_inicio,
                 hora_fim: values.hora_fim,
+                inicio_em,
+                fim_em,
+                duracao_minutos: duration,
                 profissional: values.profissional || undefined,
                 observacoes: finalObservacoes || undefined,
             });

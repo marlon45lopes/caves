@@ -36,6 +36,7 @@ import type { Specialty } from '@/types/appointment';
 const formSchema = z.object({
     nome: z.string().min(1, 'Nome é obrigatório'),
     tipo: z.string().min(1, 'Tipo é obrigatório'),
+    duracao_minutos: z.coerce.number().min(5, 'Duração mínima é 5 minutos').optional(),
     clinica_id: z.string().optional(),
     clinica_ids: z.array(z.string()).optional(),
 }).refine((data) => {
@@ -67,6 +68,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
         defaultValues: {
             nome: '',
             tipo: '',
+            duracao_minutos: 30,
             clinica_id: '',
             clinica_ids: [],
         },
@@ -77,6 +79,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
             form.reset({
                 nome: specialty.nome,
                 tipo: specialty.tipo || '',
+                duracao_minutos: specialty.duracao_minutos || 30,
                 clinica_id: specialty.clinica_id || '',
                 clinica_ids: [],
             });
@@ -84,6 +87,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
             form.reset({
                 nome: '',
                 tipo: '',
+                duracao_minutos: 30,
                 clinica_id: '',
                 clinica_ids: [],
             });
@@ -101,6 +105,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
                     id: specialty.id,
                     nome: values.nome,
                     tipo: values.tipo,
+                    duracao_minutos: values.duracao_minutos,
                     clinica_id: values.clinica_id,
                 });
                 toast.success('Especialidade atualizada com sucesso!');
@@ -112,6 +117,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
                 await createSpecialty.mutateAsync({
                     nome: values.nome,
                     tipo: values.tipo,
+                    duracao_minutos: values.duracao_minutos,
                     clinica_ids: values.clinica_ids,
                 });
                 toast.success('Especialidade(s) criada(s) com sucesso!');
@@ -142,6 +148,20 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
                                     <FormLabel>Nome da Especialidade</FormLabel>
                                     <FormControl>
                                         <Input placeholder="Ex: Cardiologia" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="duracao_minutos"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Duração da consulta (minutos)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="Ex: 30" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

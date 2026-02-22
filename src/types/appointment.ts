@@ -5,6 +5,9 @@ export interface Appointment {
   data: string;
   hora_inicio: string | null;
   hora_fim: string | null;
+  inicio_em?: string | null;
+  fim_em?: string | null;
+  duracao_minutos?: number | null;
   status: AppointmentStatus;
   guia_gerada: boolean | null;
   empresa: string | null;
@@ -31,6 +34,7 @@ export interface Appointment {
   especialidade?: {
     id: string;
     nome: string;
+    duracao_minutos?: number | null;
   };
 }
 
@@ -61,6 +65,11 @@ export interface Specialty {
   nome: string;
   clinica_id: string | null;
   tipo: string | null;
+  duracao_minutos?: number | null;
+  clinica?: {
+    id: string;
+    nome: string;
+  };
 }
 
 export interface Company {

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { AppointmentStatus } from '@/types/appointment';
+import type { AppointmentStatus, Specialty } from '@/types/appointment';
 
 export function useAppointments(date?: string, clinicId?: string | null, specialtyName?: string | null) {
   return useQuery({
@@ -74,6 +74,9 @@ export function useUpdateAppointment() {
       data?: string;
       hora_inicio?: string;
       hora_fim?: string;
+      inicio_em?: string;
+      fim_em?: string;
+      duracao_minutos?: number;
       profissional?: string;
       observacoes?: string;
     }) => {
@@ -128,6 +131,9 @@ export function useCreateAppointment() {
       data: string;
       hora_inicio: string;
       hora_fim: string;
+      inicio_em?: string;
+      fim_em?: string;
+      duracao_minutos?: number;
       status: AppointmentStatus;
       empresa_id?: string | null;
       profissional?: string;
@@ -290,7 +296,7 @@ export function useSpecialties() {
         .order('nome');
 
       if (error) throw error;
-      return data;
+      return data as Specialty[];
     },
   });
 }
@@ -414,11 +420,12 @@ export function useCreateSpecialty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ nome, tipo, clinica_ids }: { nome: string; tipo: string; clinica_ids: string[] }) => {
+    mutationFn: async ({ nome, tipo, clinica_ids, duracao_minutos }: { nome: string; tipo: string; clinica_ids: string[]; duracao_minutos?: number }) => {
       const records = clinica_ids.map((id) => ({
         nome,
         tipo,
         clinica_id: id,
+        duracao_minutos: duracao_minutos || null
       }));
 
       const { data, error } = await supabase
@@ -439,7 +446,7 @@ export function useUpdateSpecialty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...specialty }: { id: string; nome: string; tipo: string; clinica_id: string }) => {
+    mutationFn: async ({ id, ...specialty }: { id: string; nome: string; tipo: string; clinica_id: string; duracao_minutos?: number }) => {
       const { data, error } = await supabase
         .from('especialidades')
         .update(specialty)
