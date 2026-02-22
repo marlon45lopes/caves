@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CalendarIcon, Clock, Loader2, Check, ChevronsUpDown } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfDay, subDays, isAfter, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import {
@@ -97,6 +97,7 @@ export function NewAppointmentDialog({
     const [isBlocked, setIsBlocked] = useState(false);
     const [isReleased, setIsReleased] = useState(false);
     const [justificativa, setJustificativa] = useState('');
+    const [blockReason, setBlockReason] = useState<'validity' | 'penalty' | null>(null);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -126,6 +127,7 @@ export function NewAppointmentDialog({
             setIsBlocked(false);
             setIsReleased(false);
             setJustificativa('');
+            setBlockReason(null);
             if (initialDate) {
                 form.setValue('data', initialDate);
             }
@@ -205,28 +207,71 @@ export function NewAppointmentDialog({
     const { data: pendingAppointments, isLoading: pendingLoading } = usePendingPatientAppointments(selectedPatientId);
     const { data: historyAppointments, isLoading: historyLoading } = usePatientHistoryAppointments(selectedPatientId, monthsLimit);
 
-    // Effect to check procedure validity (6 or 12 months)
+    // Effect to check procedure validity (6 or 12 months) and Penalty for missed appointments (15 days)
     useEffect(() => {
-        if (!selectedPatientId || !selectedSpecialtyId || !specialties || !historyAppointments) {
+        // 1. Reset block if essential selection is missing
+        if (!selectedPatientId || !selectedSpecialtyId || !specialties) {
             setIsBlocked(false);
             setIsReleased(false);
+            setBlockReason(null);
             return;
         }
 
-        if (isExame || isOftalmo) {
-            // historyAppointments already filtered for correct monthsLimit by hook
-            const hasRecentProcedure = historyAppointments.some(apt => apt.especialidade_id === selectedSpecialtyId);
+        // 2. Wait for history data to load
+        if (!historyAppointments) return;
+
+        // 3. Identify current specialty context
+        const spec = specialties.find(s => s.id === selectedSpecialtyId);
+        if (!spec) return;
+
+        const specType = (spec.tipo || '').toUpperCase();
+        const specName = (spec.nome || '').toLowerCase();
+
+        // Define exclusions: only these types are EXEMPT from the 15-day penalty block
+        const isExemptType = ['ADMISSIONAL', 'DEMISSIONAL', 'PSICOTESTE'].includes(specType);
+        const isTargetOftalmo = specName.includes('ofta');
+        const isConsult = specType === 'CONSULTA' || specName.includes('consulta') || specName.includes('médico') || isTargetOftalmo;
+        const isExame = specType === 'EXAME' || specName.includes('exame');
+
+        const today = startOfDay(new Date());
+        const fifteenDaysAgo = startOfDay(subDays(today, 15));
+
+        // 4. PENALTY CHECK (15 Days) - Applies to anything that isn't explicitly exempt
+        if (!isExemptType) {
+            const hasRecentMiss = historyAppointments.some(apt => {
+                if (!apt.data) return false;
+                const aptDate = startOfDay(new Date(apt.data + 'T00:00:00'));
+                const aptStatus = (apt.status || '').toLowerCase();
+                // Block if any appointment in the last 15 days was missed
+                return aptStatus === 'faltou' && (isAfter(aptDate, fifteenDaysAgo) || aptDate.getTime() === fifteenDaysAgo.getTime());
+            });
+
+            if (hasRecentMiss) {
+                setIsBlocked(true);
+                setBlockReason('penalty');
+                return; // Penalty takes precedence
+            }
+        }
+
+        // 5. VALIDITY CHECK (6 or 12 Months) - Applies to Exams or Ophthalmologist Consultations
+        if (isExame || (isTargetOftalmo && isConsult)) {
+            const hasRecentProcedure = historyAppointments.some(apt => {
+                const aptStatus = (apt.status || '').toLowerCase();
+                return apt.especialidade_id === selectedSpecialtyId && aptStatus === 'compareceu';
+            });
+
             if (hasRecentProcedure) {
                 setIsBlocked(true);
-            } else {
-                setIsBlocked(false);
-                setIsReleased(false);
+                setBlockReason('validity');
+                return; // Validity block triggered
             }
-        } else {
-            setIsBlocked(false);
-            setIsReleased(false);
         }
-    }, [selectedPatientId, selectedSpecialtyId, specialties, historyAppointments, isExame, isOftalmo]);
+
+        // 6. SUCCESS: No blocks triggered
+        setIsBlocked(false);
+        setIsReleased(false);
+        setBlockReason(null);
+    }, [selectedPatientId, selectedSpecialtyId, specialties, historyAppointments]);
 
     const hasSidebarData = (pendingAppointments && pendingAppointments.length > 0) || (historyAppointments && historyAppointments.length > 0);
 
@@ -535,7 +580,11 @@ export function NewAppointmentDialog({
                                 {isBlocked && !isReleased && (
                                     <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
                                         <p className="text-sm font-semibold text-destructive">
-                                            ⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.
+                                            {blockReason === 'penalty' ? (
+                                                <>⚠️ Este paciente possui uma falta registrada nos últimos 15 dias. Agendamentos de Consultas e Exames estão suspensos temporariamente por este período.</>
+                                            ) : (
+                                                <>⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.</>
+                                            )}
                                         </p>
                                         <Button
                                             type="button"
@@ -568,10 +617,16 @@ export function NewAppointmentDialog({
                                     </Button>
                                     <Button
                                         type="submit"
-                                        disabled={createAppointment.isPending || (isBlocked && !isReleased) || (isReleased && !justificativa.trim())}
+                                        disabled={
+                                            createAppointment.isPending ||
+                                            historyLoading ||
+                                            pendingLoading ||
+                                            (isBlocked && !isReleased) ||
+                                            (isReleased && !justificativa.trim())
+                                        }
                                     >
-                                        {createAppointment.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Agendar
+                                        {(createAppointment.isPending || historyLoading || pendingLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {historyLoading ? 'Verificando...' : 'Agendar'}
                                     </Button>
                                 </DialogFooter>
                             </form>

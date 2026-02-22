@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { CalendarIcon, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfDay, subDays, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import {
@@ -36,7 +36,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-import { useClinics, useSpecialties, useUpdateAppointment } from '@/hooks/useAppointments';
+import {
+    useClinics,
+    useSpecialties,
+    useUpdateAppointment,
+    usePatientHistoryAppointments
+} from '@/hooks/useAppointments';
 import type { Appointment } from '@/types/appointment';
 
 const formSchema = z.object({
@@ -79,9 +84,29 @@ export function EditAppointmentDialog({
         },
     });
 
+    // Validity states
+    const [isBlocked, setIsBlocked] = useState(false);
+    const [isReleased, setIsReleased] = useState(false);
+    const [justificativa, setJustificativa] = useState('');
+    const [blockReason, setBlockReason] = useState<'validity' | 'penalty' | null>(null);
+
+    const selectedPatientId = appointment.paciente_id;
+    const selectedSpecialtyId = form.watch('especialidade_id');
+
+    // Determine limits for procedure validity
+    const selectedSpecialty = specialties?.find(s => s.id === selectedSpecialtyId);
+    const isOftalmo = selectedSpecialty?.nome.toLowerCase().includes('ofta');
+    const monthsLimit = isOftalmo ? 12 : 6;
+
+    const { data: historyAppointments, isLoading: historyLoading } = usePatientHistoryAppointments(selectedPatientId || undefined, monthsLimit);
+
     // Reset form when appointment changes
     useEffect(() => {
         if (open && appointment) {
+            setIsBlocked(false);
+            setIsReleased(false);
+            setJustificativa('');
+            setBlockReason(null);
             form.reset({
                 clinica_id: appointment.clinica_id || '',
                 especialidade_id: appointment.especialidade_id || '',
@@ -94,6 +119,75 @@ export function EditAppointmentDialog({
         }
     }, [open, appointment, form]);
 
+    // Effect to check procedure validity (6 or 12 months) and Penalty for missed appointments (15 days)
+    useEffect(() => {
+        // 1. Reset block if essential selection is missing
+        if (!selectedPatientId || !selectedSpecialtyId || !specialties) {
+            setIsBlocked(false);
+            setIsReleased(false);
+            setBlockReason(null);
+            return;
+        }
+
+        // 2. Wait for history data to load
+        if (!historyAppointments) return;
+
+        // 3. Identify current specialty context
+        const spec = specialties.find(s => s.id === selectedSpecialtyId);
+        if (!spec) return;
+
+        const specType = (spec.tipo || '').toUpperCase();
+        const specName = (spec.nome || '').toLowerCase();
+
+        // Define exclusions: only these types are EXEMPT from the 15-day penalty block
+        const isExemptType = ['ADMISSIONAL', 'DEMISSIONAL', 'PSICOTESTE'].includes(specType);
+        const isTargetOftalmo = specName.includes('ofta');
+        const isConsult = specType === 'CONSULTA' || specName.includes('consulta') || specName.includes('médico') || isTargetOftalmo;
+        const isExame = specType === 'EXAME' || specName.includes('exame');
+
+        const today = startOfDay(new Date());
+        const fifteenDaysAgo = startOfDay(subDays(today, 15));
+
+        // 4. PENALTY CHECK (15 Days) - Applies to anything that isn't explicitly exempt
+        if (!isExemptType) {
+            const hasRecentMiss = historyAppointments.some(apt => {
+                // DON'T count the current appointment itself if it's already marked as faltou in a previous edit
+                // though usually you'd be editing a future one.
+                if (apt.id === appointment.id) return false;
+                if (!apt.data) return false;
+                const aptDate = startOfDay(new Date(apt.data + 'T00:00:00'));
+                const aptStatus = (apt.status || '').toLowerCase();
+                return aptStatus === 'faltou' && (isAfter(aptDate, fifteenDaysAgo) || aptDate.getTime() === fifteenDaysAgo.getTime());
+            });
+
+            if (hasRecentMiss) {
+                setIsBlocked(true);
+                setBlockReason('penalty');
+                return;
+            }
+        }
+
+        // 5. VALIDITY CHECK (6 or 12 Months) - Applies to Exams or Ophthalmologist Consultations
+        if (isExame || (isTargetOftalmo && isConsult)) {
+            const hasRecentProcedure = historyAppointments.some(apt => {
+                if (apt.id === appointment.id) return false;
+                const aptStatus = (apt.status || '').toLowerCase();
+                return apt.especialidade_id === selectedSpecialtyId && aptStatus === 'compareceu';
+            });
+
+            if (hasRecentProcedure) {
+                setIsBlocked(true);
+                setBlockReason('validity');
+                return;
+            }
+        }
+
+        // 6. SUCCESS: No blocks triggered
+        setIsBlocked(false);
+        setIsReleased(false);
+        setBlockReason(null);
+    }, [selectedPatientId, selectedSpecialtyId, specialties, historyAppointments, appointment.id]);
+
     const timeSlots = Array.from({ length: 24 }, (_, i) => {
         const hour = Math.floor(i / 2) + 6; // Start at 06:00
         const minute = i % 2 === 0 ? '00' : '30';
@@ -105,6 +199,11 @@ export function EditAppointmentDialog({
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
+            let finalObservacoes = values.observacoes || '';
+            if (isReleased && justificativa) {
+                finalObservacoes = `LIBERADO COM JUSTIFICATIVA: ${justificativa}\n\n${finalObservacoes}`.trim();
+            }
+
             await updateAppointment.mutateAsync({
                 id: appointment.id,
                 clinica_id: values.clinica_id,
@@ -113,7 +212,7 @@ export function EditAppointmentDialog({
                 hora_inicio: values.hora_inicio,
                 hora_fim: values.hora_fim,
                 profissional: values.profissional || undefined,
-                observacoes: values.observacoes || undefined,
+                observacoes: finalObservacoes || undefined,
             });
 
             toast.success('Agendamento atualizado com sucesso!');
@@ -318,32 +417,56 @@ export function EditAppointmentDialog({
                             />
                         </div>
 
-                        {/* Observações */}
-                        <FormField
-                            control={form.control}
-                            name="observacoes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Observações</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Detalhes adicionais (opcional)"
-                                            className="resize-none h-20"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {/* Alerta de Validade de Exame */}
+                        {isBlocked && !isReleased && (
+                            <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
+                                <p className="text-sm font-semibold text-destructive text-center">
+                                    {blockReason === 'penalty' ? (
+                                        <>⚠️ Este paciente possui uma falta registrada nos últimos 15 dias. Agendamentos Clínicos estão suspensos temporariamente.</>
+                                    ) : (
+                                        <>⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.</>
+                                    )}
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={() => setIsReleased(true)}
+                                >
+                                    Liberar com Justificativa
+                                </Button>
+                            </div>
+                        )}
+
+                        {isBlocked && isReleased && (
+                            <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-2">
+                                <FormLabel className="text-blue-700">Justificativa para liberação *</FormLabel>
+                                <Textarea
+                                    placeholder="Descreva o motivo da liberação deste agendamento..."
+                                    className="resize-none h-20 border-blue-300"
+                                    value={justificativa}
+                                    onChange={(e) => setJustificativa(e.target.value)}
+                                />
+                                <p className="text-[10px] text-blue-600">A justificativa será incluída nas observações do agendamento.</p>
+                            </div>
+                        )}
 
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={updateAppointment.isPending}>
-                                {updateAppointment.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Salvar Alterações
+                            <Button
+                                type="submit"
+                                disabled={
+                                    updateAppointment.isPending ||
+                                    historyLoading ||
+                                    (isBlocked && !isReleased) ||
+                                    (isReleased && !justificativa.trim())
+                                }
+                            >
+                                {(updateAppointment.isPending || historyLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {historyLoading ? 'Verificando...' : 'Salvar Alterações'}
                             </Button>
                         </DialogFooter>
                     </form>

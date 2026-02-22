@@ -56,6 +56,9 @@ export function useUpdateAppointmentStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-patient-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history-appointments'] });
     },
   });
 }
@@ -88,6 +91,7 @@ export function useUpdateAppointment() {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
       queryClient.invalidateQueries({ queryKey: ['pending-patient-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history-appointments'] });
     },
   });
 }
@@ -108,6 +112,7 @@ export function useDeleteAppointment() {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
       queryClient.invalidateQueries({ queryKey: ['pending-patient-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history-appointments'] });
     },
   });
 }
@@ -139,6 +144,9 @@ export function useCreateAppointment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-patient-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-history-appointments'] });
     },
   });
 }
@@ -521,16 +529,22 @@ export function usePatientHistoryAppointments(patientId?: string, months: number
     queryFn: async () => {
       if (!patientId) return [];
 
+      // Calculate date limit in local time (avoiding UTC shift via toISOString)
       const limitDate = new Date();
       limitDate.setMonth(limitDate.getMonth() - months);
-      const dateLimit = limitDate.toISOString().split('T')[0];
+
+      // Format as YYYY-MM-DD in local time
+      const year = limitDate.getFullYear();
+      const month = String(limitDate.getMonth() + 1).padStart(2, '0');
+      const day = String(limitDate.getDate()).padStart(2, '0');
+      const dateLimit = `${year}-${month}-${day}`;
 
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
-          clinica:clinicas(id, nome, endereco, telefone),
-          especialidade:especialidades(id, nome)
+          clinica:clinicas(nome),
+          especialidade:especialidades(nome)
         `)
         .eq('paciente_id', patientId)
         .in('status', ['compareceu', 'faltou'])
