@@ -17,8 +17,9 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 200 25% 15%;
 
-    --primary: 218 71% 20%;   /* Azul CAVES */
-  --primary-foreground: 0 0% 100%;
+    --primary: 218 71% 20%;
+    /* Azul CAVES */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 200 20% 95%;
     --secondary-foreground: 200 25% 25%;
@@ -46,7 +47,7 @@ All colors MUST be HSL.
     --status-reagendado: 25 95% 45%;
 
     /* Sidebar */
-  /* Sidebar */
+    /* Sidebar */
     --sidebar-background: 215 72% 20%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;

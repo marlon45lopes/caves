@@ -247,7 +247,7 @@ export function AppointmentActionsDialog({
                   variant="destructive"
                   className="w-full"
                   onClick={handleDelete}
-                  disabled={updateStatus.isPending || deleteAppointment.isPending || !isAdmin}
+                  disabled={updateStatus.isPending || deleteAppointment.isPending || !(isAdmin || isAtendente)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Excluir agendamento
