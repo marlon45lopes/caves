@@ -311,11 +311,15 @@ export function CalendarView() {
                       {`${String(hour).padStart(2, '0')}:00`}
                     </div>
                     {weekDays.map((_, dayIndex) => (
-                      <div
-                        key={dayIndex}
-                        className="border-r last:border-r-0 h-full hover:bg-accent/5 transition-colors cursor-pointer"
-                        onClick={() => canCreateAppointment && handleNewAppointment(weekDays[dayIndex], `${String(hour).padStart(2, '0')}:00`)}
-                      />
+                      <div key={dayIndex} className="border-r last:border-r-0 h-full flex flex-col">
+                        {[0, 15, 30, 45].map((minute) => (
+                          <div
+                            key={minute}
+                            className="flex-1 hover:bg-accent/5 transition-colors cursor-pointer border-b border-dashed border-muted/5 last:border-b-0"
+                            onClick={() => canCreateAppointment && handleNewAppointment(weekDays[dayIndex], `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)}
+                          />
+                        ))}
+                      </div>
                     ))}
                   </div>
                 ))}
@@ -325,7 +329,7 @@ export function CalendarView() {
                   {weekDays.map((day, dayIndex) => {
                     const positionedAppointments = getPositionedAppointments(day);
                     return (
-                      <div key={format(day, 'yyyy-MM-dd')} className="relative h-full border-r last:border-r-0 pointer-events-auto">
+                      <div key={format(day, 'yyyy-MM-dd')} className="relative h-full border-r last:border-r-0 pointer-events-none">
                         {positionedAppointments.map((apt: any) => {
                           const width = 100 / apt.totalCols;
                           const left = apt.colIndex * width;
@@ -333,7 +337,7 @@ export function CalendarView() {
                           return (
                             <div
                               key={apt.id}
-                              className="absolute z-10"
+                              className="absolute z-10 pointer-events-auto"
                               style={{
                                 top: `${apt.top}px`,
                                 height: `${apt.height}px`,
@@ -364,10 +368,15 @@ export function CalendarView() {
                   <div className="w-20 py-4 px-3 text-sm text-muted-foreground border-r bg-secondary/30">
                     {`${String(hour).padStart(2, '0')}:00`}
                   </div>
-                  <div
-                    className="flex-1 hover:bg-accent/5 transition-colors cursor-pointer"
-                    onClick={() => canCreateAppointment && handleNewAppointment(currentDate, `${String(hour).padStart(2, '0')}:00`)}
-                  />
+                  <div className="flex-1 flex flex-col">
+                    {[0, 15, 30, 45].map((minute) => (
+                      <div
+                        key={minute}
+                        className="flex-1 hover:bg-accent/5 transition-colors cursor-pointer border-b border-dashed border-muted/5 last:border-b-0"
+                        onClick={() => canCreateAppointment && handleNewAppointment(currentDate, `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)}
+                      />
+                    ))}
+                  </div>
                 </div>
               ))}
 
