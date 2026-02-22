@@ -89,6 +89,7 @@ export function NewAppointmentDialog({
     const { data: patients } = usePatients();
     const { data: clinics } = useClinics(true); // Only active clinics
     const [patientOpen, setPatientOpen] = useState(false);
+    const [patientSearch, setPatientSearch] = useState('');
     const { data: specialties } = useSpecialties();
     const createAppointment = useCreateAppointment();
 
@@ -225,32 +226,60 @@ export function NewAppointmentDialog({
                                                     </FormControl>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-[400px] p-0">
-                                                    <Command>
-                                                        <CommandInput placeholder="Procurar paciente..." />
+                                                    <Command shouldFilter={false}>
+                                                        <CommandInput
+                                                            placeholder="Buscar por nome ou CPF (mín. 3 caracteres)..."
+                                                            value={patientSearch}
+                                                            onValueChange={setPatientSearch}
+                                                        />
                                                         <CommandList>
-                                                            <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {patients?.map((patient) => (
-                                                                    <CommandItem
-                                                                        value={patient.nome}
-                                                                        key={patient.id}
-                                                                        onSelect={() => {
-                                                                            form.setValue("paciente_id", patient.id);
-                                                                            setPatientOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Check
-                                                                            className={cn(
-                                                                                "mr-2 h-4 w-4",
-                                                                                patient.id === field.value
-                                                                                    ? "opacity-100"
-                                                                                    : "opacity-0"
-                                                                            )}
-                                                                        />
-                                                                        {patient.nome}
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
+                                                            {patientSearch.length < 3 ? (
+                                                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                                                    Digite ao menos 3 caracteres para buscar
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                                                                    <CommandGroup>
+                                                                        {patients
+                                                                            ?.filter((patient) => {
+                                                                                const search = patientSearch.toLowerCase().replace(/[.\-]/g, '');
+                                                                                const nameMatch = patient.nome.toLowerCase().includes(search);
+                                                                                const cpfClean = (patient.cpf || '').replace(/[.\-]/g, '');
+                                                                                const cpfMatch = cpfClean.includes(search);
+                                                                                return nameMatch || cpfMatch;
+                                                                            })
+                                                                            .map((patient) => (
+                                                                                <CommandItem
+                                                                                    value={patient.nome}
+                                                                                    key={patient.id}
+                                                                                    onSelect={() => {
+                                                                                        form.setValue("paciente_id", patient.id);
+                                                                                        setPatientOpen(false);
+                                                                                        setPatientSearch('');
+                                                                                    }}
+                                                                                >
+                                                                                    <Check
+                                                                                        className={cn(
+                                                                                            "mr-2 h-4 w-4",
+                                                                                            patient.id === field.value
+                                                                                                ? "opacity-100"
+                                                                                                : "opacity-0"
+                                                                                        )}
+                                                                                    />
+                                                                                    <div className="flex flex-col">
+                                                                                        <span>{patient.nome}</span>
+                                                                                        {patient.cpf && (
+                                                                                            <span className="text-xs text-muted-foreground">
+                                                                                                CPF: {patient.cpf}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </CommandItem>
+                                                                            ))}
+                                                                    </CommandGroup>
+                                                                </>
+                                                            )}
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
