@@ -32,30 +32,26 @@ export function AppointmentCard({ appointment, onClick, variant = 'default' }: A
           onClick();
         }}
         className={cn(
-          'h-full w-full cursor-pointer rounded border p-2 text-xs transition-colors',
+          'h-full w-full cursor-pointer rounded border p-1 text-[10px] transition-colors',
           statusColors[appointment.status] || 'bg-secondary border-secondary',
-          'flex flex-col justify-between overflow-hidden'
+          'flex flex-col gap-0.5 overflow-hidden'
         )}
         title={`${appointment.paciente?.nome} - ${appointment.especialidade?.nome}`}
       >
-        <div className="font-bold truncate">
-          {appointment.paciente?.nome?.split(' ')[0]} {/* Primeiro nome */}
+        <div className="font-bold truncate leading-tight">
+          {appointment.paciente?.nome}
         </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="truncate opacity-75">{appointment.especialidade?.nome}</span>
-          <div className="flex items-center justify-between mt-1">
-            <span className="font-mono font-medium">
-              {formatTime(appointment.hora_inicio)}
-            </span>
-            {/* Small Status Indicator for Compact View */}
-            <div className={cn("w-2 h-2 rounded-full", {
-              "bg-status-agendado": appointment.status === 'agendado',
-              "bg-status-compareceu": appointment.status === 'compareceu',
-              "bg-status-faltou": appointment.status === 'faltou',
-              "bg-status-cancelado": appointment.status === 'cancelado',
-              "bg-status-reagendado": appointment.status === 'reagendado',
-            })} />
-          </div>
+        <div className="flex items-center justify-between opacity-80 mt-auto">
+          <span className="font-mono">
+            {formatTime(appointment.hora_inicio)}
+          </span>
+          <div className={cn("w-1.5 h-1.5 rounded-full", {
+            "bg-status-agendado": appointment.status === 'agendado',
+            "bg-status-compareceu": appointment.status === 'compareceu',
+            "bg-status-faltou": appointment.status === 'faltou',
+            "bg-status-cancelado": appointment.status === 'cancelado',
+            "bg-status-reagendado": appointment.status === 'reagendado',
+          })} />
         </div>
       </div>
     );
