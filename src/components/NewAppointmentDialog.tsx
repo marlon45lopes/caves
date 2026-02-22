@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -191,10 +191,21 @@ export function NewAppointmentDialog({
     // Watch for patient selection to fetch pending appointments
     const selectedPatientId = form.watch('paciente_id');
     const selectedSpecialtyId = form.watch('especialidade_id');
-    const { data: pendingAppointments, isLoading: pendingLoading } = usePendingPatientAppointments(selectedPatientId);
-    const { data: historyAppointments, isLoading: historyLoading } = usePatientHistoryAppointments(selectedPatientId);
 
-    // Effect to check exam validity (6 months)
+    // Determine validity period based on specialty
+    const selectedSpecialty = useMemo(() =>
+        specialties?.find(s => s.id === selectedSpecialtyId),
+        [specialties, selectedSpecialtyId]
+    );
+
+    const isOftalmo = selectedSpecialty?.nome?.toLowerCase().includes('ofta') && selectedSpecialty?.tipo === 'CONSULTA';
+    const isExame = selectedSpecialty?.tipo === 'EXAME';
+    const monthsLimit = isOftalmo ? 12 : 6;
+
+    const { data: pendingAppointments, isLoading: pendingLoading } = usePendingPatientAppointments(selectedPatientId);
+    const { data: historyAppointments, isLoading: historyLoading } = usePatientHistoryAppointments(selectedPatientId, monthsLimit);
+
+    // Effect to check procedure validity (6 or 12 months)
     useEffect(() => {
         if (!selectedPatientId || !selectedSpecialtyId || !specialties || !historyAppointments) {
             setIsBlocked(false);
@@ -202,11 +213,10 @@ export function NewAppointmentDialog({
             return;
         }
 
-        const selectedSpec = specialties.find(s => s.id === selectedSpecialtyId);
-        if (selectedSpec?.tipo === 'EXAME') {
-            // historyAppointments already filtered for last 6 months by hook
-            const hasRecentExam = historyAppointments.some(apt => apt.especialidade_id === selectedSpecialtyId);
-            if (hasRecentExam) {
+        if (isExame || isOftalmo) {
+            // historyAppointments already filtered for correct monthsLimit by hook
+            const hasRecentProcedure = historyAppointments.some(apt => apt.especialidade_id === selectedSpecialtyId);
+            if (hasRecentProcedure) {
                 setIsBlocked(true);
             } else {
                 setIsBlocked(false);
@@ -216,7 +226,7 @@ export function NewAppointmentDialog({
             setIsBlocked(false);
             setIsReleased(false);
         }
-    }, [selectedPatientId, selectedSpecialtyId, specialties, historyAppointments]);
+    }, [selectedPatientId, selectedSpecialtyId, specialties, historyAppointments, isExame, isOftalmo]);
 
     const hasSidebarData = (pendingAppointments && pendingAppointments.length > 0) || (historyAppointments && historyAppointments.length > 0);
 
@@ -525,7 +535,7 @@ export function NewAppointmentDialog({
                                 {isBlocked && !isReleased && (
                                     <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
                                         <p className="text-sm font-semibold text-destructive">
-                                            ⚠️ Este paciente já realizou este exame nos últimos 6 meses e ele ainda está na validade.
+                                            ⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.
                                         </p>
                                         <Button
                                             type="button"
@@ -627,7 +637,7 @@ export function NewAppointmentDialog({
                                 <TabsContent value="history" className="mt-0">
                                     <h3 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
                                         <Check className="h-4 w-4" />
-                                        Histórico (últimos 6 meses)
+                                        Histórico ({monthsLimit === 12 ? 'último 1 ano' : 'últimos 6 meses'})
                                     </h3>
                                     <div className="space-y-2 max-h-[460px] overflow-y-auto pr-2">
                                         {historyLoading ? (

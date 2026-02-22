@@ -515,15 +515,15 @@ export function usePendingPatientAppointments(patientId?: string) {
     enabled: !!patientId,
   });
 }
-export function usePatientHistoryAppointments(patientId?: string) {
+export function usePatientHistoryAppointments(patientId?: string, months: number = 6) {
   return useQuery({
-    queryKey: ['patient-history-appointments', patientId],
+    queryKey: ['patient-history-appointments', patientId, months],
     queryFn: async () => {
       if (!patientId) return [];
 
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      const dateLimit = sixMonthsAgo.toISOString().split('T')[0];
+      const limitDate = new Date();
+      limitDate.setMonth(limitDate.getMonth() - months);
+      const dateLimit = limitDate.toISOString().split('T')[0];
 
       const { data, error } = await supabase
         .from('agendamentos')
