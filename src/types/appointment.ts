@@ -20,6 +20,7 @@ export interface Appointment {
     cpf: string | null;
     telefone: string | null;
     email: string | null;
+    tipo_paciente?: string | null;
   };
   clinica?: {
     id: string;
@@ -44,6 +45,7 @@ export interface Patient {
   matricula: string | null;
   empresa: string | null;
   empresa_id: string | null;
+  tipo_paciente: string | null;
 }
 
 export interface Clinic {

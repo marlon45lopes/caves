@@ -12,7 +12,8 @@ import {
     Clock,
     FileText,
     MapPin,
-    Edit
+    Edit,
+    Trash2
 } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { usePatient, usePatientAppointments } from '@/hooks/useAppointments';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { usePatient, usePatientAppointments, useDeletePatient } from '@/hooks/useAppointments';
 import { PatientFormDialog } from '@/components/PatientFormDialog';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Loader2 } from 'lucide-react';
@@ -33,6 +45,17 @@ export default function PatientDetailsPage() {
 
     const { data: patient, isLoading: isLoadingPatient } = usePatient(id);
     const { data: appointments, isLoading: isLoadingAppointments } = usePatientAppointments(id);
+    const deletePatient = useDeletePatient();
+
+    const handleDeletePatient = async () => {
+        if (!id) return;
+        try {
+            await deletePatient.mutateAsync(id);
+            navigate('/pacientes');
+        } catch (error) {
+            // error handled by mutation
+        }
+    };
 
     if (isLoadingPatient || isLoadingAppointments) {
         return (
@@ -85,11 +108,32 @@ export default function PatientDetailsPage() {
                                 <User className="h-12 w-12 text-primary" />
                             </div>
                             <CardTitle>{patient.nome}</CardTitle>
-                            <div className="flex justify-center mt-4">
+                            <div className="flex justify-center gap-2 mt-4">
                                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setEditDialogOpen(true)}>
                                     <Edit className="h-4 w-4" />
                                     Editar Dados
                                 </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Excluir Paciente</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Tem certeza que deseja excluir o paciente <strong>{patient.nome}</strong>? Esta ação não pode ser desfeita.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleDeletePatient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                Excluir
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -118,6 +162,19 @@ export default function PatientDetailsPage() {
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <FileText className="h-4 w-4" />
                                         <span>Matrícula: {patient.matricula}</span>
+                                    </div>
+                                )}
+                                {patient.tipo_paciente && (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <User className="h-4 w-4" />
+                                        <span>Tipo: </span>
+                                        <Badge variant={
+                                            patient.tipo_paciente === 'TITULAR' ? 'default' :
+                                                patient.tipo_paciente === 'DEPENDENTE' ? 'secondary' :
+                                                    'outline'
+                                        }>
+                                            {patient.tipo_paciente === 'EXTRAORDINARIO' ? 'Extraordinário' : patient.tipo_paciente.charAt(0) + patient.tipo_paciente.slice(1).toLowerCase()}
+                                        </Badge>
                                     </div>
                                 )}
                             </div>

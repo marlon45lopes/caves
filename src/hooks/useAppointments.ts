@@ -10,7 +10,7 @@ export function useAppointments(date?: string, clinicId?: string | null, special
         .from('agendamentos')
         .select(`
           *,
-          paciente:pacientes(id, nome, cpf, telefone, email),
+          paciente:pacientes(id, nome, cpf, telefone, email, tipo_paciente),
           clinica:clinicas(id, nome, endereco, telefone),
           especialidade:especialidades(id, nome)
         `)
@@ -167,6 +167,7 @@ export function useCreatePatient() {
       'data de nascimento'?: string | null;
       matricula?: string | null;
       empresa_id?: string | null;
+      tipo_paciente?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('pacientes')
@@ -197,6 +198,7 @@ export function useUpdatePatient() {
       'data de nascimento'?: string | null;
       matricula?: string | null;
       empresa_id?: string | null;
+      tipo_paciente?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('pacientes')

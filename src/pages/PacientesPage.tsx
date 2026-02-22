@@ -52,7 +52,7 @@ const PacientesPage = () => {
   };
 
   const handleDelete = async () => {
-    if (!deletePatient || !isAdmin) return;
+    if (!deletePatient || !canModify) return;
     try {
       await deletePatientMutation.mutateAsync(deletePatient.id);
       toast.success('Paciente excluído com sucesso!');
@@ -134,7 +134,7 @@ const PacientesPage = () => {
                       </Button>
                     )}
 
-                    {isAdmin && (
+                    {canModify && (
                       <Button
                         variant="ghost"
                         size="icon"

@@ -161,6 +161,15 @@ export const generateGuide = (appointment: Appointment) => {
     doc.setFont('helvetica', 'normal');
     doc.text(appointment.paciente?.telefone || '', 35, yPos);
 
+    const tipoPaciente = (appointment.paciente as any)?.tipo_paciente;
+    if (tipoPaciente) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Tipo:', 100, yPos);
+        doc.setFont('helvetica', 'normal');
+        const tipoLabel = tipoPaciente === 'EXTRAORDINARIO' ? 'EXTRAORDINÁRIO' : tipoPaciente;
+        doc.text(tipoLabel, 115, yPos);
+    }
+
     // Service Box - Calculate dynamic height based on content
     const serviceBoxTop = 90;
     let serviceYPos = serviceBoxTop + 14; // Start after header

@@ -54,6 +54,7 @@ const patientSchema = z.object({
   data_nascimento: z.string().optional(),
   matricula: z.string().optional(),
   empresa_id: z.string().optional(),
+  tipo_paciente: z.string().optional(),
 });
 
 type PatientFormData = z.infer<typeof patientSchema>;
@@ -85,6 +86,7 @@ export function PatientFormDialog({
       data_nascimento: '',
       matricula: '',
       empresa_id: '',
+      tipo_paciente: '',
     },
   });
 
@@ -99,6 +101,7 @@ export function PatientFormDialog({
         data_nascimento: patient['data de nascimento'] || '',
         matricula: patient.matricula || '',
         empresa_id: patient.empresa_id || '',
+        tipo_paciente: patient.tipo_paciente || '',
       });
     } else {
       form.reset({
@@ -110,6 +113,7 @@ export function PatientFormDialog({
         data_nascimento: '',
         matricula: '',
         empresa_id: '',
+        tipo_paciente: '',
       });
     }
   }, [patient, form]);
@@ -125,6 +129,7 @@ export function PatientFormDialog({
         'data de nascimento': data.data_nascimento || null,
         matricula: data.matricula || null,
         empresa_id: data.empresa_id || null,
+        tipo_paciente: data.tipo_paciente || null,
       };
 
       if (isEditing && patient) {
@@ -321,6 +326,30 @@ export function PatientFormDialog({
                 )}
               />
             </div>
+
+            {/* Tipo de Paciente */}
+            <FormField
+              control={form.control}
+              name="tipo_paciente"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Paciente</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="TITULAR">Titular</SelectItem>
+                      <SelectItem value="DEPENDENTE">Dependente</SelectItem>
+                      <SelectItem value="EXTRAORDINARIO">Extraordinário</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
