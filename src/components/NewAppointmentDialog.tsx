@@ -137,18 +137,28 @@ export function NewAppointmentDialog({
             setIsReleased(false);
             setJustificativa('');
             setBlockReason(null);
-            if (initialDate) {
-                form.setValue('data', initialDate);
-            }
+
+            // Calculate initial end time
+            let endTime = '';
             if (initialTime) {
-                form.setValue('hora_inicio', initialTime);
                 const [hours, minutes] = initialTime.split(':').map(Number);
                 const endMinutes = minutes + 30;
                 const endHours = hours + Math.floor(endMinutes / 60);
                 const finalMinutes = endMinutes % 60;
-                const endTime = `${endHours.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
-                form.setValue('hora_fim', endTime);
+                endTime = `${endHours.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
             }
+
+            // Reset entire form to clean state with initial values
+            form.reset({
+                paciente_id: '',
+                clinica_id: '',
+                especialidade_id: '',
+                data: initialDate || new Date(),
+                hora_inicio: initialTime || '',
+                hora_fim: endTime,
+                observacoes: '',
+                profissional: '',
+            });
         }
     }, [open, initialDate, initialTime, form]);
 
