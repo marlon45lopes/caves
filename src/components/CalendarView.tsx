@@ -173,17 +173,40 @@ export function CalendarView() {
     setNewAppointmentOpen(true);
   };
 
-  const hours = Array.from({ length: 12 }, (_, i) => 6 + i); // 06:00 to 17:00
+  const PIXELS_PER_HOUR = 100;
+  const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60;
+  const CALENDAR_START_MINUTES = 360; // 06:00
+  const CALENDAR_END_MINUTES = 1080; // 18:00
+
+  const gridSlots = useMemo(() => {
+    const slots = [];
+
+    // Find duration for the grid
+    let duration = 60;
+    if (selectedSpecialtyName !== 'all' && specialties) {
+      const spec = specialties.find(s => s.nome === selectedSpecialtyName);
+      if (spec?.duracao_minutos) duration = spec.duracao_minutos;
+    }
+
+    let current = CALENDAR_START_MINUTES;
+    while (current < CALENDAR_END_MINUTES) {
+      const h = Math.floor(current / 60);
+      const m = current % 60;
+      slots.push({
+        time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+        startMinutes: current,
+        duration
+      });
+      current += duration;
+    }
+    return slots;
+  }, [selectedSpecialtyName, specialties]);
 
   const getMinutes = (timeStr: string | null) => {
     if (!timeStr) return 480; // Default 8:00
     const [h, m] = timeStr.split(':').map(Number);
     return h * 60 + m;
   };
-
-  const PIXELS_PER_HOUR = 100;
-  const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60;
-  const CALENDAR_START_MINUTES = 360; // 06:00
 
   return (
     <div className="space-y-4">
@@ -305,21 +328,21 @@ export function CalendarView() {
               {/* Grid Body */}
               <div className="relative">
                 {/* Background Grid Lines */}
-                {hours.map((hour) => (
-                  <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b last:border-b-0 h-[100px]">
-                    <div className="py-3 px-2 text-xs text-muted-foreground border-r bg-secondary/30 flex items-start justify-center">
-                      {`${String(hour).padStart(2, '0')}:00`}
+                {gridSlots.map((slot) => (
+                  <div
+                    key={slot.time}
+                    className="grid grid-cols-[60px_repeat(7,1fr)] border-b last:border-b-0"
+                    style={{ height: `${slot.duration * PIXELS_PER_MINUTE}px` }}
+                  >
+                    <div className="py-2 px-1 text-[10px] text-muted-foreground border-r bg-secondary/30 flex items-start justify-center">
+                      {slot.time}
                     </div>
                     {weekDays.map((_, dayIndex) => (
-                      <div key={dayIndex} className="border-r last:border-r-0 h-full flex flex-col">
-                        {[0, 15, 30, 45].map((minute) => (
-                          <div
-                            key={minute}
-                            className="flex-1 hover:bg-accent/5 transition-colors cursor-pointer border-b border-dashed border-muted/5 last:border-b-0"
-                            onClick={() => canCreateAppointment && handleNewAppointment(weekDays[dayIndex], `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)}
-                          />
-                        ))}
-                      </div>
+                      <div
+                        key={dayIndex}
+                        className="border-r last:border-r-0 h-full hover:bg-accent/5 transition-colors cursor-pointer"
+                        onClick={() => canCreateAppointment && handleNewAppointment(weekDays[dayIndex], slot.time)}
+                      />
                     ))}
                   </div>
                 ))}
@@ -363,23 +386,21 @@ export function CalendarView() {
           ) : (
             <div className="relative">
               {/* Day View Background */}
-              {hours.map((hour) => (
-                <div key={hour} className="flex border-b last:border-b-0 h-[100px]">
-                  <div className="w-20 py-4 px-3 text-sm text-muted-foreground border-r bg-secondary/30">
-                    {`${String(hour).padStart(2, '0')}:00`}
+              {gridSlots.map((slot) => (
+                <div
+                  key={slot.time}
+                  className="flex border-b last:border-b-0"
+                  style={{ height: `${slot.duration * PIXELS_PER_MINUTE}px` }}
+                >
+                  <div className="w-20 py-2 px-3 text-sm text-muted-foreground border-r bg-secondary/30">
+                    {slot.time}
                   </div>
-                  <div className="flex-1 flex flex-col">
-                    {[0, 15, 30, 45].map((minute) => (
-                      <div
-                        key={minute}
-                        className="flex-1 hover:bg-accent/5 transition-colors cursor-pointer border-b border-dashed border-muted/5 last:border-b-0"
-                        onClick={() => canCreateAppointment && handleNewAppointment(currentDate, `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)}
-                      />
-                    ))}
-                  </div>
+                  <div
+                    className="flex-1 hover:bg-accent/5 transition-colors cursor-pointer"
+                    onClick={() => canCreateAppointment && handleNewAppointment(currentDate, slot.time)}
+                  />
                 </div>
               ))}
-
               {/* Day View Appointments Overlay */}
               <div className="absolute top-0 left-20 right-0 bottom-0 pointer-events-none">
                 {getPositionedAppointments(currentDate).map((apt: any) => {
