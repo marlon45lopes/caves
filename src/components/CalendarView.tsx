@@ -234,25 +234,6 @@ export function CalendarView() {
         <div className="flex items-center gap-2">
           <div className="w-[200px]">
             <Select
-              key={selectedClinicId}
-              value={selectedSpecialtyName}
-              onValueChange={setSelectedSpecialtyName}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={isSpecialtiesLoading ? "Carregando..." : "Todas as especialidades"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as especialidades</SelectItem>
-                {filteredSpecialties?.map((specialty) => (
-                  <SelectItem key={specialty.id} value={specialty.nome}>
-                    {specialty.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-[200px]">
-            <Select
               value={selectedClinicId}
               onValueChange={(value) => {
                 setSelectedClinicId(value);
@@ -268,6 +249,25 @@ export function CalendarView() {
                 {clinics?.map((clinic) => (
                   <SelectItem key={clinic.id} value={clinic.id}>
                     {clinic.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-[200px]">
+            <Select
+              key={selectedClinicId}
+              value={selectedSpecialtyName}
+              onValueChange={setSelectedSpecialtyName}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={isSpecialtiesLoading ? "Carregando..." : "Todas as especialidades"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as especialidades</SelectItem>
+                {filteredSpecialties?.map((specialty) => (
+                  <SelectItem key={specialty.id} value={specialty.nome}>
+                    {specialty.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
