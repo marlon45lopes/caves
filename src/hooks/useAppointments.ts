@@ -172,6 +172,24 @@ export function usePatients() {
   });
 }
 
+export function usePatientsWithAwaitingAppointments() {
+  return useQuery({
+    queryKey: ['patients-awaiting-appointments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .select('paciente_id')
+        .eq('status', 'agendado');
+
+      if (error) throw error;
+
+      // Get unique patient IDs
+      const uniquePatientIds = new Set(data.map(a => a.paciente_id));
+      return uniquePatientIds.size;
+    },
+  });
+}
+
 export function useCreatePatient() {
   const queryClient = useQueryClient();
 

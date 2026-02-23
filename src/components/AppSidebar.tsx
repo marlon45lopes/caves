@@ -44,7 +44,7 @@ export function AppSidebar() {
       return isAdmin;
     }
     if (isClinica) {
-      return ['Dashboard', 'Agenda', 'Pacientes'].includes(item.title);
+      return ['Dashboard', 'Agenda'].includes(item.title);
     }
     if (isAtendente) {
       // Atendente usually manages clinics/specialties/companies too, but maybe not reports?

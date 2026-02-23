@@ -1,16 +1,32 @@
 import { Calendar, Users, Building2, Stethoscope, Briefcase, TrendingUp } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Card } from '@/components/ui/card';
-import { useAppointments, usePatients, useClinics, useSpecialties, useCompanies } from '@/hooks/useAppointments';
+import {
+  useAppointments,
+  usePatients,
+  useClinics,
+  useSpecialties,
+  useCompanies,
+  usePatientsWithAwaitingAppointments
+} from '@/hooks/useAppointments';
 import { format } from 'date-fns';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
+  const { profile } = useAuth();
+  const isClinica = profile?.role === 'CLINICA';
+
   const today = format(new Date(), 'yyyy-MM-dd');
   const { data: todayAppointments } = useAppointments(today);
   const { data: patients } = usePatients();
+  const { data: patientsWithAwaiting } = usePatientsWithAwaitingAppointments();
   const { data: clinics } = useClinics();
   const { data: specialties } = useSpecialties();
   const { data: companies } = useCompanies();
+
+  const filteredSpecialties = specialties?.filter(s =>
+    !isClinica || s.clinica_id === profile?.clinica_id
+  );
 
   const stats = [
     {
@@ -20,8 +36,8 @@ const Index = () => {
       color: 'bg-status-agendado/15 text-status-agendado',
     },
     {
-      label: 'Pacientes',
-      value: patients?.length || 0,
+      label: isClinica ? 'Pacientes (Aguardando)' : 'Pacientes',
+      value: isClinica ? (patientsWithAwaiting || 0) : (patients?.length || 0),
       icon: Users,
       color: 'bg-primary/15 text-primary',
     },
@@ -33,7 +49,7 @@ const Index = () => {
     },
     {
       label: 'Especialidades',
-      value: specialties?.length || 0,
+      value: filteredSpecialties?.length || 0,
       icon: Stethoscope,
       color: 'bg-status-reagendado/15 text-status-reagendado',
     },
@@ -45,12 +61,19 @@ const Index = () => {
     },
   ];
 
+  const filteredStats = stats.filter(stat => {
+    if (isClinica) {
+      return !['Clínicas Ativas', 'Empresas'].includes(stat.label);
+    }
+    return true;
+  });
+
   return (
     <Layout title="Dashboard">
       <div className="space-y-8">
         {/* Stats Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {stats.map((stat) => (
+        <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-${filteredStats.length}`}>
+          {filteredStats.map((stat) => (
             <Card key={stat.label} className="p-6">
               <div className="flex items-center gap-4">
                 <div className={`rounded-xl p-3 ${stat.color}`}>
