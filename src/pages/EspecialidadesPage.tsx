@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 const EspecialidadesPage = () => {
   const [search, setSearch] = useState('');
@@ -23,6 +25,9 @@ const EspecialidadesPage = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | undefined>(undefined);
   const { data: specialties, isLoading } = useSpecialties();
   const { data: clinics } = useClinics(true);
+  const { profile } = useAuth();
+
+  const isAtendente = profile?.role === 'ATENDENTE';
 
   const filteredSpecialties = specialties?.filter((s) => {
     const matchesSearch = s.nome.toLowerCase().includes(search.toLowerCase());
@@ -71,15 +76,17 @@ const EspecialidadesPage = () => {
               {filteredSpecialties?.length || 0} especialidades
             </Badge>
           </div>
-          <Button
-            onClick={() => {
-              setSelectedSpecialty(undefined);
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Especialidade
-          </Button>
+          {!isAtendente && (
+            <Button
+              onClick={() => {
+                setSelectedSpecialty(undefined);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Especialidade
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -107,10 +114,15 @@ const EspecialidadesPage = () => {
                   {specs?.map((specialty) => (
                     <Card
                       key={specialty.id}
-                      className="p-3 hover:shadow-md transition-shadow cursor-pointer flex justify-between items-center"
+                      className={cn(
+                        "p-3 transition-shadow flex justify-between items-center",
+                        !isAtendente ? "hover:shadow-md cursor-pointer" : ""
+                      )}
                       onClick={() => {
-                        setSelectedSpecialty(specialty);
-                        setDialogOpen(true);
+                        if (!isAtendente) {
+                          setSelectedSpecialty(specialty);
+                          setDialogOpen(true);
+                        }
                       }}
                     >
                       <div className="flex flex-col gap-1 items-start">

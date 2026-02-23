@@ -9,12 +9,16 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ClinicDialog } from '@/components/ClinicDialog';
 import type { Clinic } from '@/types/appointment';
+import { useAuth } from '@/hooks/useAuth';
 
 const ClinicasPage = () => {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState<Clinic | undefined>(undefined);
   const { data: clinics, isLoading } = useClinics();
+  const { profile } = useAuth();
+
+  const isAtendente = profile?.role === 'ATENDENTE';
 
   const filteredClinics = clinics?.filter((c) =>
     c.nome.toLowerCase().includes(search.toLowerCase())
@@ -41,15 +45,17 @@ const ClinicasPage = () => {
               {activeCount} ativas de {totalCount}
             </Badge>
           </div>
-          <Button
-            onClick={() => {
-              setSelectedClinic(undefined);
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Clínica
-          </Button>
+          {!isAtendente && (
+            <Button
+              onClick={() => {
+                setSelectedClinic(undefined);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Clínica
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -67,7 +73,7 @@ const ClinicasPage = () => {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredClinics?.map((clinic) => (
+            {filteredClinics?.map((clinic: Clinic) => (
               <Card
                 key={clinic.id}
                 className={cn(
@@ -102,20 +108,22 @@ const ClinicasPage = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-1 mt-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => {
-                      setSelectedClinic(clinic);
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
-                </div>
+                {!isAtendente && (
+                  <div className="flex gap-1 mt-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => {
+                        setSelectedClinic(clinic);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Editar
+                    </Button>
+                  </div>
+                )}
               </Card>
             ))}
           </div>
