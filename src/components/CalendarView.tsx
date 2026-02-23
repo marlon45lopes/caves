@@ -365,7 +365,7 @@ export function CalendarView() {
                                 top: `${apt.top}px`,
                                 height: `${apt.height}px`,
                                 left: `${left}%`,
-                                width: `${width}%`,
+                                width: `${width * 0.9}%`,
                                 padding: '1px'
                               }}
                             >
@@ -415,7 +415,7 @@ export function CalendarView() {
                         top: `${apt.top}px`,
                         height: `${apt.height}px`,
                         left: `${left}%`,
-                        width: `${width}%`,
+                        width: `${width * 0.9}%`,
                         padding: '2px'
                       }}
                     >
