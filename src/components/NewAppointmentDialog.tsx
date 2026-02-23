@@ -121,14 +121,24 @@ export function NewAppointmentDialog({
         },
     });
 
-    const timeSlots = Array.from({ length: 48 }, (_, i) => {
-        const hour = Math.floor(i / 4) + 6; // Start at 06:00
-        const minute = (i % 4) * 15;
+    // Generate time slots with 5-minute intervals
+    const timeSlots = Array.from({ length: 12 * 13 + 1 }, (_, i) => {
+        const totalMinutes = i * 5;
+        const hour = Math.floor(totalMinutes / 60) + 6;
+        const minute = totalMinutes % 60;
         return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     }).filter(time => {
         const h = parseInt(time.split(':')[0]);
-        return h <= 18; // End at 18:00
+        const m = parseInt(time.split(':')[1]);
+        if (h > 18) return false;
+        if (h === 18 && m > 0) return false;
+        return true;
     });
+
+    // Helper to format time from Date
+    const formatTimeFromDate = (date: Date) => {
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    };
 
     // Update form values when initial props change
     useEffect(() => {
@@ -138,14 +148,14 @@ export function NewAppointmentDialog({
             setJustificativa('');
             setBlockReason(null);
 
-            // Calculate initial end time
+            // Calculate initial end time (30 mins fallback)
             let endTime = '';
             if (initialTime) {
                 const [hours, minutes] = initialTime.split(':').map(Number);
-                const endMinutes = minutes + 30;
-                const endHours = hours + Math.floor(endMinutes / 60);
-                const finalMinutes = endMinutes % 60;
-                endTime = `${endHours.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
+                const date = new Date();
+                date.setHours(hours, minutes, 0, 0);
+                const endDate = new Date(date.getTime() + 30 * 60000);
+                endTime = formatTimeFromDate(endDate);
             }
 
             // Reset entire form to clean state with initial values
@@ -162,25 +172,25 @@ export function NewAppointmentDialog({
         }
     }, [open, initialDate, initialTime, form]);
 
+    const watchedHoraInicio = form.watch('hora_inicio');
+    const watchedSpecialtyId = form.watch('especialidade_id');
+
     // Update hora_fim when hora_inicio or especialidade_id changes
     useEffect(() => {
-        const hora_inicio = form.watch('hora_inicio');
-        const specialtyId = form.watch('especialidade_id');
-
-        if (hora_inicio && specialtyId && specialties) {
-            const spec = specialties.find(s => s.id === specialtyId);
+        if (watchedHoraInicio && watchedSpecialtyId && specialties) {
+            const spec = specialties.find(s => s.id === watchedSpecialtyId);
             const duration = spec?.duracao_minutos || 30;
 
-            const [hours, minutes] = hora_inicio.split(':').map(Number);
+            const [hours, minutes] = watchedHoraInicio.split(':').map(Number);
             const date = new Date();
             date.setHours(hours, minutes, 0, 0);
 
             const endDate = new Date(date.getTime() + duration * 60000);
-            const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+            const endTime = formatTimeFromDate(endDate);
 
             form.setValue('hora_fim', endTime);
         }
-    }, [form.watch('hora_inicio'), form.watch('especialidade_id'), specialties]);
+    }, [watchedHoraInicio, watchedSpecialtyId, specialties, form]);
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
@@ -449,7 +459,7 @@ export function NewAppointmentDialog({
                                                         field.onChange(value);
                                                         form.setValue('especialidade_id', ''); // Reset specialty when clinic changes
                                                     }}
-                                                    defaultValue={field.value}
+                                                    value={field.value}
                                                 >
                                                     <FormControl>
                                                         <SelectTrigger>
@@ -478,7 +488,7 @@ export function NewAppointmentDialog({
                                                 <FormLabel>Especialidade</FormLabel>
                                                 <Select
                                                     onValueChange={field.onChange}
-                                                    defaultValue={field.value}
+                                                    value={field.value}
                                                     disabled={!selectedClinicId}
                                                 >
                                                     <FormControl>
@@ -551,7 +561,7 @@ export function NewAppointmentDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Início</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger>
                                                             <SelectValue placeholder="00:00" />
@@ -577,7 +587,7 @@ export function NewAppointmentDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Fim</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger>
                                                             <SelectValue placeholder="00:00" />

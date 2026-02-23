@@ -200,7 +200,7 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Clínica</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Selecione a clínica" />

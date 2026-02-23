@@ -119,6 +119,31 @@ export function EditAppointmentDialog({
         }
     }, [open, appointment, form]);
 
+    // Helper to format time from Date
+    const formatTimeFromDate = (date: Date) => {
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    };
+
+    const watchedHoraInicio = form.watch('hora_inicio');
+    const watchedSpecialtyId = form.watch('especialidade_id');
+
+    // Update hora_fim when hora_inicio or especialidade_id changes
+    useEffect(() => {
+        if (watchedHoraInicio && watchedSpecialtyId && specialties) {
+            const spec = specialties.find(s => s.id === watchedSpecialtyId);
+            const duration = spec?.duracao_minutos || 30;
+
+            const [hours, minutes] = watchedHoraInicio.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+
+            const endDate = new Date(date.getTime() + duration * 60000);
+            const endTime = formatTimeFromDate(endDate);
+
+            form.setValue('hora_fim', endTime);
+        }
+    }, [watchedHoraInicio, watchedSpecialtyId, specialties, form]);
+
     // Effect to check procedure validity (6 or 12 months) and Penalty for missed appointments (15 days)
     useEffect(() => {
         // 1. Reset block if essential selection is missing
@@ -188,34 +213,19 @@ export function EditAppointmentDialog({
         setBlockReason(null);
     }, [selectedPatientId, selectedSpecialtyId, specialties, historyAppointments, appointment.id]);
 
-    const timeSlots = Array.from({ length: 48 }, (_, i) => {
-        const hour = Math.floor(i / 4) + 6; // Start at 06:00
-        const minute = (i % 4) * 15;
+    // Generate time slots with 5-minute intervals
+    const timeSlots = Array.from({ length: 12 * 13 + 1 }, (_, i) => {
+        const totalMinutes = i * 5;
+        const hour = Math.floor(totalMinutes / 60) + 6;
+        const minute = totalMinutes % 60;
         return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     }).filter(time => {
         const h = parseInt(time.split(':')[0]);
-        return h <= 18; // End at 18:00
+        const m = parseInt(time.split(':')[1]);
+        if (h > 18) return false;
+        if (h === 18 && m > 0) return false;
+        return true;
     });
-
-    // Update hora_fim when hora_inicio or especialidade_id changes
-    useEffect(() => {
-        const hora_inicio = form.watch('hora_inicio');
-        const specialtyId = form.watch('especialidade_id');
-
-        if (hora_inicio && specialtyId && specialties) {
-            const spec = specialties.find(s => s.id === specialtyId);
-            const duration = spec?.duracao_minutos || 30;
-
-            const [hours, minutes] = hora_inicio.split(':').map(Number);
-            const date = new Date();
-            date.setHours(hours, minutes, 0, 0);
-
-            const endDate = new Date(date.getTime() + duration * 60000);
-            const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
-
-            form.setValue('hora_fim', endTime);
-        }
-    }, [form.watch('hora_inicio'), form.watch('especialidade_id'), specialties]);
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
