@@ -443,6 +443,8 @@ export function CalendarView() {
         onOpenChange={setNewAppointmentOpen}
         initialDate={newAppointmentData?.date}
         initialTime={newAppointmentData?.time}
+        initialClinicId={selectedClinicId !== 'all' ? selectedClinicId : undefined}
+        initialSpecialtyId={selectedSpecialtyName !== 'all' ? specialties?.find(s => s.nome === selectedSpecialtyName)?.id : undefined}
       />
     </div>
   );

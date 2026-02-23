@@ -78,13 +78,17 @@ interface NewAppointmentDialogProps {
     onOpenChange: (open: boolean) => void;
     initialDate?: Date;
     initialTime?: string;
+    initialClinicId?: string;
+    initialSpecialtyId?: string;
 }
 
 export function NewAppointmentDialog({
     open,
     onOpenChange,
     initialDate,
-    initialTime
+    initialTime,
+    initialClinicId,
+    initialSpecialtyId
 }: NewAppointmentDialogProps) {
     const { data: patients } = usePatients();
     const { data: clinics } = useClinics(true); // Only active clinics
@@ -99,27 +103,28 @@ export function NewAppointmentDialog({
     const [justificativa, setJustificativa] = useState('');
     const [blockReason, setBlockReason] = useState<'validity' | 'penalty' | null>(null);
 
+    // Helper to format time from Date
+    const formatTimeFromDate = (date: Date) => {
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    };
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             paciente_id: '',
-            clinica_id: '',
-            especialidade_id: '',
+            clinica_id: initialClinicId || '',
+            especialidade_id: initialSpecialtyId || '',
             data: initialDate || new Date(),
             hora_inicio: initialTime || '',
             hora_fim: initialTime ?
-                (() => {
-                    const [hours, minutes] = initialTime.split(':').map(Number);
-                    const endMinutes = minutes + 30;
-                    const endHours = hours + Math.floor(endMinutes / 60);
-                    const finalMinutes = endMinutes % 60;
-                    return `${endHours.toString().padStart(2, '0')}:${finalMinutes.toString().padStart(2, '0')}`;
-                })()
+                formatTimeFromDate(new Date(new Date().setHours(Number(initialTime.split(':')[0]), Number(initialTime.split(':')[1]) + 30)))
                 : '',
-            observacoes: '',
             profissional: '',
+            observacoes: '',
         },
     });
+
+
 
     // Generate time slots with 5-minute intervals
     const timeSlots = Array.from({ length: 12 * 13 + 1 }, (_, i) => {
@@ -135,10 +140,7 @@ export function NewAppointmentDialog({
         return true;
     });
 
-    // Helper to format time from Date
-    const formatTimeFromDate = (date: Date) => {
-        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    };
+
 
     // Update form values when initial props change
     useEffect(() => {
@@ -161,8 +163,8 @@ export function NewAppointmentDialog({
             // Reset entire form to clean state with initial values
             form.reset({
                 paciente_id: '',
-                clinica_id: '',
-                especialidade_id: '',
+                clinica_id: initialClinicId || '',
+                especialidade_id: initialSpecialtyId || '',
                 data: initialDate || new Date(),
                 hora_inicio: initialTime || '',
                 hora_fim: endTime,
@@ -170,7 +172,7 @@ export function NewAppointmentDialog({
                 profissional: '',
             });
         }
-    }, [open, initialDate, initialTime, form]);
+    }, [open, initialDate, initialTime, initialClinicId, initialSpecialtyId, form]);
 
     const watchedHoraInicio = form.watch('hora_inicio');
     const watchedSpecialtyId = form.watch('especialidade_id');
