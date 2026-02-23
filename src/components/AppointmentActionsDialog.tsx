@@ -202,17 +202,48 @@ export function AppointmentActionsDialog({
               </div>
 
               {appointment.observacoes && (
-                <div className="mt-3 p-3 bg-white border border-destructive/20 rounded-md shadow-sm">
-                  <p className="text-[10px] font-bold text-destructive mb-1 uppercase tracking-widest flex items-center gap-1">
-                    <FileText className="h-3 w-3" />
-                    Observações / Justificativa
-                  </p>
-                  <p className={cn(
-                    "text-sm whitespace-pre-wrap leading-relaxed",
-                    appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:') ? "text-destructive font-semibold" : "text-foreground"
-                  )}>
-                    {appointment.observacoes}
-                  </p>
+                <div className="mt-3 space-y-3">
+                  {appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:') ? (() => {
+                    const parts = appointment.observacoes.split('\n\n');
+                    const justificationPart = parts[0];
+                    const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
+
+                    return (
+                      <>
+                        <div className="p-3 bg-red-50 border border-destructive/20 rounded-md shadow-sm">
+                          <p className="text-[10px] font-bold text-destructive mb-1 uppercase tracking-widest flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            Justificativa de Liberação
+                          </p>
+                          <p className="text-sm font-semibold text-destructive whitespace-pre-wrap leading-relaxed">
+                            {justificationPart.replace('LIBERADO COM JUSTIFICATIVA:', '').trim()}
+                          </p>
+                        </div>
+
+                        {otherObs && (
+                          <div className="p-3 bg-white border border-secondary rounded-md shadow-sm">
+                            <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-widest flex items-center gap-1">
+                              <FileText className="h-3 w-3" />
+                              Detalhes Adicionais / Observações
+                            </p>
+                            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                              {otherObs}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })() : (
+                    <div className="p-3 bg-white border border-secondary rounded-md shadow-sm">
+                      <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-widest flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        Observações
+                      </p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                        {appointment.observacoes}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

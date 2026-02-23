@@ -172,20 +172,30 @@ export function usePatients() {
   });
 }
 
-export function usePatientsWithAwaitingAppointments() {
+export function useAwaitingStats(clinicId?: string | null) {
   return useQuery({
-    queryKey: ['patients-awaiting-appointments'],
+    queryKey: ['awaiting-stats', clinicId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('agendamentos')
-        .select('paciente_id')
+        .select(`
+          status,
+          clinica_id,
+          especialidade:especialidades!inner(tipo)
+        `)
         .eq('status', 'agendado');
 
+      if (clinicId) {
+        query = query.eq('clinica_id', clinicId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
 
-      // Get unique patient IDs
-      const uniquePatientIds = new Set(data.map(a => a.paciente_id));
-      return uniquePatientIds.size;
+      const consultas = data.filter(a => (a.especialidade as any).tipo === 'CONSULTA').length;
+      const exames = data.filter(a => (a.especialidade as any).tipo === 'EXAME').length;
+
+      return { consultas, exames };
     },
   });
 }
@@ -502,21 +512,28 @@ export function usePatient(id?: string) {
   });
 }
 
-export function usePatientAppointments(patientId?: string) {
+export function usePatientAppointments(patientId?: string, clinicId?: string | null) {
   return useQuery({
-    queryKey: ['patient-appointments', patientId],
+    queryKey: ['patient-appointments', patientId, clinicId],
     queryFn: async () => {
       if (!patientId) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('agendamentos')
         .select(`
           *,
           clinica:clinicas(id, nome, endereco, telefone),
           especialidade:especialidades(id, nome)
         `)
-        .eq('paciente_id', patientId)
-        .order('data', { ascending: false })
+        .eq('paciente_id', patientId);
+
+      if (clinicId) {
+        query = query.eq('clinica_id', clinicId);
+      }
+
+      query = query.order('data', { ascending: false })
         .order('hora_inicio', { ascending: false });
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data;

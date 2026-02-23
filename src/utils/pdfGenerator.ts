@@ -80,15 +80,12 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
         yPos += lineHeight;
     }
 
-    const time = appointment.hora_inicio ? `${appointment.hora_inicio.slice(0, 5)}` : '';
-    doc.text(time, 118, yPos);
-
-    yPos += 8;
-
     if (appointment.profissional) {
         doc.text(`Profissional: ${appointment.profissional}`, 20, yPos);
         yPos += lineHeight;
     }
+
+    yPos += 5; // Spacing before observations
 
     if (appointment.observacoes) {
         const hasJustification = appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:');
@@ -98,23 +95,39 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
             const justificationPart = parts[0];
             const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
 
+            // Section: Justificativa
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(200, 0, 0); // Red for emphasis
-            const splitJustification = doc.splitTextToSize(justificationPart, 170);
+            doc.text('Justificativa de Liberação:', 20, yPos);
+            yPos += lineHeight;
+
+            doc.setFont('helvetica', 'bold');
+            const splitJustification = doc.splitTextToSize(justificationPart.replace('LIBERADO COM JUSTIFICATIVA:', '').trim(), 170);
             doc.text(splitJustification, 20, yPos);
             yPos += (splitJustification.length * lineHeight);
 
+            // Section: Other Observations
             if (otherObs) {
-                doc.setFont('helvetica', 'normal');
+                yPos += 5;
+                doc.setFont('helvetica', 'bold');
                 doc.setTextColor(0, 0, 0);
-                const splitOther = doc.splitTextToSize(`Outras Observações: ${otherObs}`, 170);
+                doc.text('Detalhes Adicionais (Observações):', 20, yPos);
+                yPos += lineHeight;
+
+                doc.setFont('helvetica', 'normal');
+                const splitOther = doc.splitTextToSize(otherObs, 170);
                 doc.text(splitOther, 20, yPos);
                 yPos += (splitOther.length * lineHeight);
             }
         } else {
-            doc.setFont('helvetica', 'normal');
+            // General Observations
+            doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
-            const splitObservacoes = doc.splitTextToSize(`Observações: ${appointment.observacoes}`, 170);
+            doc.text('Observações / Detalhes Adicionais:', 20, yPos);
+            yPos += lineHeight;
+
+            doc.setFont('helvetica', 'normal');
+            const splitObservacoes = doc.splitTextToSize(appointment.observacoes, 170);
             doc.text(splitObservacoes, 20, yPos);
             yPos += (splitObservacoes.length * lineHeight);
         }

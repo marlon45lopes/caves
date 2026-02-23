@@ -45,9 +45,14 @@ export default function PatientDetailsPage() {
     const [editDialogOpen, setEditDialogOpen] = useState(false);
 
     const { data: patient, isLoading: isLoadingPatient } = usePatient(id);
-    const { data: appointments, isLoading: isLoadingAppointments } = usePatientAppointments(id);
-    const deletePatient = useDeletePatient();
     const { profile } = useAuth();
+    const isClinica = profile?.role === 'CLINICA';
+
+    const { data: appointments, isLoading: isLoadingAppointments } = usePatientAppointments(
+        id,
+        isClinica ? profile?.clinica_id : null
+    );
+    const deletePatient = useDeletePatient();
 
     const isAdmin = profile?.role === 'ADMIN';
     const isAtendente = profile?.role === 'ATENDENTE';

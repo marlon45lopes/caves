@@ -7,7 +7,7 @@ import {
   useClinics,
   useSpecialties,
   useCompanies,
-  usePatientsWithAwaitingAppointments
+  useAwaitingStats
 } from '@/hooks/useAppointments';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,7 +19,7 @@ const Index = () => {
   const today = format(new Date(), 'yyyy-MM-dd');
   const { data: todayAppointments } = useAppointments(today);
   const { data: patients } = usePatients();
-  const { data: patientsWithAwaiting } = usePatientsWithAwaitingAppointments();
+  const { data: awaitingStats } = useAwaitingStats(isClinica ? profile?.clinica_id : null);
   const { data: clinics } = useClinics();
   const { data: specialties } = useSpecialties();
   const { data: companies } = useCompanies();
@@ -36,16 +36,24 @@ const Index = () => {
       color: 'bg-status-agendado/15 text-status-agendado',
     },
     {
-      label: isClinica ? 'Pacientes (Aguardando)' : 'Pacientes',
-      value: isClinica ? (patientsWithAwaiting || 0) : (patients?.length || 0),
+      label: isClinica ? 'Consultas em Aberto' : 'Pacientes',
+      value: isClinica ? (awaitingStats?.consultas || 0) : (patients?.length || 0),
       icon: Users,
       color: 'bg-primary/15 text-primary',
+    },
+    {
+      label: 'Exames em Aberto',
+      value: awaitingStats?.exames || 0,
+      icon: TrendingUp,
+      color: 'bg-indigo-500/15 text-indigo-500',
+      onlyClinica: true,
     },
     {
       label: 'Clínicas Ativas',
       value: clinics?.length || 0,
       icon: Building2,
       color: 'bg-status-compareceu/15 text-status-compareceu',
+      hideFromClinica: true,
     },
     {
       label: 'Especialidades',
@@ -58,14 +66,16 @@ const Index = () => {
       value: companies?.length || 0,
       icon: Briefcase,
       color: 'bg-status-faltou/15 text-status-faltou',
+      hideFromClinica: true,
     },
   ];
 
   const filteredStats = stats.filter(stat => {
     if (isClinica) {
-      return !['Clínicas Ativas', 'Empresas'].includes(stat.label);
+      if ((stat as any).hideFromClinica) return false;
+      return true;
     }
-    return true;
+    return !(stat as any).onlyClinica;
   });
 
   return (
