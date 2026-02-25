@@ -309,6 +309,15 @@ export function NewAppointmentDialog({
         if (!isExemptType) {
             const hasRecentMiss = historyAppointments.some(apt => {
                 if (!apt.data) return false;
+
+                // Extract specialty name, assuming the joined record resolves it as either string or an object with the property name
+                const aptSpecName = (typeof apt.especialidade === 'string'
+                    ? apt.especialidade
+                    : apt.especialidade?.nome || '').toLowerCase();
+
+                // Only block if the missed appointment's specialty name matches the current one
+                if (aptSpecName !== specName) return false;
+
                 const aptDate = startOfDay(new Date(apt.data + 'T00:00:00'));
                 const aptStatus = (apt.status || '').toLowerCase();
                 // Block if any appointment in the last 15 days was missed
@@ -722,7 +731,7 @@ export function NewAppointmentDialog({
                                         <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
                                             <p className="text-sm font-semibold text-destructive">
                                                 {blockReason === 'penalty' ? (
-                                                    <>⚠️ Este paciente possui uma falta registrada nos últimos 15 dias. Agendamentos de Consultas e Exames estão suspensos temporariamente por este período.</>
+                                                    <>⚠️ Este paciente possui uma falta registrada para esta especialidade nos últimos 15 dias. Agendamentos para esta especialidade estão suspensos temporariamente por este período.</>
                                                 ) : (
                                                     <>⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.</>
                                                 )}

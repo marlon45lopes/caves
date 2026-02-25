@@ -187,6 +187,15 @@ export function EditAppointmentDialog({
                 // though usually you'd be editing a future one.
                 if (apt.id === appointment.id) return false;
                 if (!apt.data) return false;
+
+                // Extract specialty name, assuming the joined record resolves it as either string or an object with the property name
+                const aptSpecName = (typeof apt.especialidade === 'string'
+                    ? apt.especialidade
+                    : apt.especialidade?.nome || '').toLowerCase();
+
+                // Only block if the missed appointment's specialty name matches the current one
+                if (aptSpecName !== specName) return false;
+
                 const aptDate = startOfDay(new Date(apt.data + 'T00:00:00'));
                 const aptStatus = (apt.status || '').toLowerCase();
                 return aptStatus === 'faltou' && (isAfter(aptDate, fifteenDaysAgo) || aptDate.getTime() === fifteenDaysAgo.getTime());
@@ -561,7 +570,7 @@ export function EditAppointmentDialog({
                             <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
                                 <p className="text-sm font-semibold text-destructive text-center">
                                     {blockReason === 'penalty' ? (
-                                        <>⚠️ Este paciente possui uma falta registrada nos últimos 15 dias. Agendamentos Clínicos estão suspensos temporariamente.</>
+                                        <>⚠️ Este paciente possui uma falta registrada para esta especialidade nos últimos 15 dias. Agendamentos para esta especialidade estão suspensos temporariamente por este período.</>
                                     ) : (
                                         <>⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.</>
                                     )}
