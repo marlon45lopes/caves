@@ -369,7 +369,7 @@ export function CalendarView() {
                               top: `${apt.top}px`,
                               height: `${apt.height}px`,
                               left: `${(100 / apt.totalCols) * apt.colIndex}%`,
-                              width: `${(100 / apt.totalCols) * 0.9}%`,
+                              width: `${(100 / apt.totalCols) * (apt.colIndex === apt.totalCols - 1 ? 0.9 : 1)}%`,
                               padding: '1px',
                               zIndex: 10 + apt.colIndex // Ensure later overlapping items are on top
                             }}
@@ -415,7 +415,7 @@ export function CalendarView() {
                       top: `${apt.top}px`,
                       height: `${apt.height}px`,
                       left: `${(100 / apt.totalCols) * apt.colIndex}%`,
-                      width: `${(100 / apt.totalCols) * 0.9}%`,
+                      width: `${(100 / apt.totalCols) * (apt.colIndex === apt.totalCols - 1 ? 0.9 : 1)}%`,
                       padding: '2px',
                       zIndex: 10 + apt.colIndex
                     }}
