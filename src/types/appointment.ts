@@ -1,4 +1,5 @@
 export type AppointmentStatus = 'agendado' | 'compareceu' | 'faltou' | 'cancelado' | 'reagendado';
+export type ScheduleType = 'hora_marcada' | 'ordem_chegada';
 
 export interface Appointment {
   id: string;
@@ -37,6 +38,7 @@ export interface Appointment {
     duracao_minutos?: number | null;
   };
   atendimento_online?: boolean | null;
+  tipo_horario?: ScheduleType | null;
 }
 
 export interface Patient {

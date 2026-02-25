@@ -54,8 +54,11 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
     doc.text(`Data: ${dateFormatted}`, 20, yPos);
     yPos += lineHeight;
 
+    const isArrivingOrder = appointment.observacoes?.includes('[CHEGADA]');
+    const scheduleTypeLabel = isArrivingOrder ? 'ORDEM DE CHEGADA' : 'HORA MARCADA';
+
     if (appointment.hora_inicio) {
-        doc.text(`Horário: ${appointment.hora_inicio.slice(0, 5)} - ${appointment.hora_fim?.slice(0, 5) || ''}`, 20, yPos);
+        doc.text(`Horário: ${appointment.hora_inicio.slice(0, 5)} - ${appointment.hora_fim?.slice(0, 5) || ''} (${scheduleTypeLabel})`, 20, yPos);
         yPos += lineHeight;
     }
 
@@ -304,7 +307,8 @@ export const generateGuide = (appointment: Appointment) => {
     }
 
     const isOnline = appointment.observacoes?.includes('[ONLINE]');
-    const cleanObservacoes = appointment.observacoes?.replace('[ONLINE]', '').trim();
+    const isArrivingOrder = appointment.observacoes?.includes('[CHEGADA]');
+    const cleanObservacoes = appointment.observacoes?.replace('[ONLINE]', '').replace('[CHEGADA]', '').trim() || '';
 
     if (isOnline) {
         doc.setFont('helvetica', 'bold');
@@ -319,14 +323,8 @@ export const generateGuide = (appointment: Appointment) => {
     doc.text('Data Agendada:', 15, serviceYPos);
     doc.setFont('helvetica', 'normal');
     const dateFormatted = format(new Date(appointment.data + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR });
-    doc.text(dateFormatted, 55, serviceYPos);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Horário:', 100, serviceYPos);
-    doc.setFont('helvetica', 'normal');
-    const time = appointment.hora_inicio ? `${appointment.hora_inicio.slice(0, 5)}` : '';
-    doc.text(time, 120, serviceYPos);
-
+    const scheduleTypeLabel = isArrivingOrder ? 'ORDEM DE CHEGADA' : 'HORA MARCADA';
+    doc.text(`${dateFormatted} - ${appointment.hora_inicio?.slice(0, 5) || ''} (${scheduleTypeLabel})`, 55, serviceYPos);
     serviceYPos += 8;
 
     const pageHeightLimit = doc.internal.pageSize.height;

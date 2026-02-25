@@ -39,6 +39,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
 import {
     Command,
@@ -69,9 +70,10 @@ const formSchema = z.object({
     }),
     hora_inicio: z.string().min(1, 'Selecione o horário de início'),
     hora_fim: z.string().min(1, 'Selecione o horário de fim'),
-    profissional: z.string().min(1, 'Informe o nome do profissional'),
+    profissional: z.string().optional(),
     observacoes: z.string().optional(),
     atendimento_online: z.boolean().default(false),
+    tipo_horario: z.enum(['hora_marcada', 'ordem_chegada']).default('hora_marcada'),
 });
 
 interface NewAppointmentDialogProps {
@@ -123,6 +125,7 @@ export function NewAppointmentDialog({
             profissional: '',
             observacoes: '',
             atendimento_online: false,
+            tipo_horario: 'hora_marcada',
         },
     });
 
@@ -173,6 +176,7 @@ export function NewAppointmentDialog({
                 observacoes: '',
                 profissional: '',
                 atendimento_online: false,
+                tipo_horario: 'hora_marcada',
             });
         }
     }, [open, initialDate, initialTime, initialClinicId, initialSpecialtyId, form]);
@@ -213,6 +217,11 @@ export function NewAppointmentDialog({
             // Add Online marker if active
             if (values.atendimento_online) {
                 finalObservacoes = `[ONLINE] ${finalObservacoes}`.trim();
+            }
+
+            // Add Arrival Order marker if active
+            if (values.tipo_horario === 'ordem_chegada') {
+                finalObservacoes = `[CHEGADA] ${finalObservacoes}`.trim();
             }
 
             if (isReleased && justificativa) {
@@ -617,6 +626,41 @@ export function NewAppointmentDialog({
                                         )}
                                     />
                                 </div>
+
+                                <FormField
+                                    control={form.control}
+                                    name="tipo_horario"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-3">
+                                            <FormLabel>Tipo de Horário</FormLabel>
+                                            <FormControl>
+                                                <RadioGroup
+                                                    onValueChange={field.onChange}
+                                                    defaultValue={field.value}
+                                                    className="flex gap-4"
+                                                >
+                                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                                        <FormControl>
+                                                            <RadioGroupItem value="hora_marcada" />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal cursor-pointer">
+                                                            Hora Marcada
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                                        <FormControl>
+                                                            <RadioGroupItem value="ordem_chegada" />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal cursor-pointer">
+                                                            Ordem de Chegada
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                </RadioGroup>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
                                 <FormField
                                     control={form.control}

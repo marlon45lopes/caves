@@ -248,10 +248,11 @@ export function AppointmentActionsDialog({
 
                     const parts = appointment.observacoes.split('\n\n');
                     const hasJustification = appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:');
+                    const cleanText = appointment.observacoes.replace('[ONLINE]', '').replace('[CHEGADA]', '').trim();
 
                     if (hasJustification) {
-                      const justificationPart = parts[0].replace('LIBERADO COM JUSTIFICATIVA:', '').trim();
-                      const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
+                      const justificationPart = parts[0].replace('LIBERADO WITH JUSTIFICATION:', '').replace('LIBERADO COM JUSTIFICATIVA:', '').trim();
+                      const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n').replace('[ONLINE]', '').replace('[CHEGADA]', '').trim() : '';
 
                       return (
                         <>
@@ -263,7 +264,7 @@ export function AppointmentActionsDialog({
                           {otherObs && (
                             <ExpandableText
                               text={otherObs}
-                              title="Detalhes Adicionais / Observações"
+                              title="Observações"
                             />
                           )}
                         </>

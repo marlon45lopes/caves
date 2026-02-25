@@ -33,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -55,6 +56,7 @@ const formSchema = z.object({
     profissional: z.string().optional(),
     observacoes: z.string().optional(),
     atendimento_online: z.boolean().default(false),
+    tipo_horario: z.enum(['hora_marcada', 'ordem_chegada']).default('hora_marcada'),
 });
 
 interface EditAppointmentDialogProps {
@@ -81,8 +83,9 @@ export function EditAppointmentDialog({
             hora_inicio: appointment.hora_inicio?.slice(0, 5) || '',
             hora_fim: appointment.hora_fim?.slice(0, 5) || '',
             profissional: appointment.profissional || '',
-            observacoes: (appointment.observacoes || '').replace('[ONLINE]', '').trim(),
+            observacoes: (appointment.observacoes || '').replace('[ONLINE]', '').replace('[CHEGADA]', '').trim(),
             atendimento_online: (appointment.observacoes || '').includes('[ONLINE]'),
+            tipo_horario: (appointment.observacoes || '').includes('[CHEGADA]') ? 'ordem_chegada' : 'hora_marcada',
         },
     });
 
@@ -116,8 +119,9 @@ export function EditAppointmentDialog({
                 hora_inicio: appointment.hora_inicio?.slice(0, 5) || '',
                 hora_fim: appointment.hora_fim?.slice(0, 5) || '',
                 profissional: appointment.profissional || '',
-                observacoes: (appointment.observacoes || '').replace('[ONLINE]', '').trim(),
+                observacoes: (appointment.observacoes || '').replace('[ONLINE]', '').replace('[CHEGADA]', '').trim(),
                 atendimento_online: (appointment.observacoes || '').includes('[ONLINE]'),
+                tipo_horario: (appointment.observacoes || '').includes('[CHEGADA]') ? 'ordem_chegada' : 'hora_marcada',
             });
         }
     }, [open, appointment, form]);
@@ -244,6 +248,11 @@ export function EditAppointmentDialog({
             // Add Online marker if active
             if (values.atendimento_online) {
                 finalObservacoes = `[ONLINE] ${finalObservacoes}`.trim();
+            }
+
+            // Add Arrival Order marker if active
+            if (values.tipo_horario === 'ordem_chegada') {
+                finalObservacoes = `[CHEGADA] ${finalObservacoes}`.trim();
             }
 
             if (isReleased && justificativa) {
@@ -411,7 +420,6 @@ export function EditAppointmentDialog({
                                 </FormItem>
                             )}
                         />
-
                         <div className="grid grid-cols-2 gap-4">
                             {/* Hora Início */}
                             <FormField
@@ -465,6 +473,42 @@ export function EditAppointmentDialog({
                                 )}
                             />
                         </div>
+
+                        <FormField
+                            control={form.control}
+                            name="tipo_horario"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                    <FormLabel>Tipo de Horário</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                            value={field.value}
+                                            className="flex gap-4"
+                                        >
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                                <FormControl>
+                                                    <RadioGroupItem value="hora_marcada" />
+                                                </FormControl>
+                                                <FormLabel className="font-normal cursor-pointer">
+                                                    Hora Marcada
+                                                </FormLabel>
+                                            </FormItem>
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                                <FormControl>
+                                                    <RadioGroupItem value="ordem_chegada" />
+                                                </FormControl>
+                                                <FormLabel className="font-normal cursor-pointer">
+                                                    Ordem de Chegada
+                                                </FormLabel>
+                                            </FormItem>
+                                        </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             control={form.control}
@@ -566,7 +610,7 @@ export function EditAppointmentDialog({
                         </DialogFooter>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </DialogContent >
+        </Dialog >
     );
 }
