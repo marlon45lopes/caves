@@ -66,8 +66,9 @@ export function CalendarView() {
   }, [specialties, selectedClinicId]);
 
   const weekDays = useMemo(() => {
-    // Show 7 days starting from current date (rolling week)
-    return Array.from({ length: 7 }, (_, i) => addDays(currentDate, i));
+    // Standardize week to always start on Monday and end on Sunday
+    const Monday = startOfWeek(currentDate, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => addDays(Monday, i));
   }, [currentDate]);
 
   const gridTemplateColumns = useMemo(() => {
