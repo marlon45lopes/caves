@@ -90,7 +90,7 @@ const EspecialidadesPage = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(8)].map((_, i) => (
               <Card key={i} className="p-4 animate-pulse">
                 <div className="h-6 bg-muted rounded w-3/4" />
@@ -110,7 +110,7 @@ const EspecialidadesPage = () => {
                   <h3 className="font-semibold text-foreground">{clinicName}</h3>
                   <Badge variant="outline">{specs?.length}</Badge>
                 </div>
-                <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                   {specs?.map((specialty) => (
                     <Card
                       key={specialty.id}

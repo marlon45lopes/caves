@@ -22,7 +22,7 @@ export function Layout({ children, title }: LayoutProps) {
               <h1 className="text-xl font-semibold text-foreground">{title}</h1>
             )}
           </header>
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-4 md:p-6">{children}</main>
         </SidebarInset>
       </div>
     </SidebarProvider>

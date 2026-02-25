@@ -232,8 +232,8 @@ export function CalendarView() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="w-[200px]">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex-1 min-w-[150px] sm:w-[200px]">
             <Select
               value={selectedClinicId}
               onValueChange={(value) => {
@@ -255,7 +255,7 @@ export function CalendarView() {
               </SelectContent>
             </Select>
           </div>
-          <div className="w-[200px]">
+          <div className="flex-1 min-w-[150px] sm:w-[200px]">
             <Select
               key={selectedClinicId}
               value={selectedSpecialtyName}
@@ -274,16 +274,17 @@ export function CalendarView() {
               </SelectContent>
             </Select>
           </div>
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-auto">
             <TabsList>
               <TabsTrigger value="day">Dia</TabsTrigger>
               <TabsTrigger value="week">Semana</TabsTrigger>
             </TabsList>
           </Tabs>
           {canCreateAppointment && (
-            <Button onClick={() => handleNewAppointment()}>
+            <Button onClick={() => handleNewAppointment()} className="whitespace-nowrap">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Agendamento
+              <span className="hidden xs:inline">Novo Agendamento</span>
+              <span className="xs:hidden">Novo</span>
             </Button>
           )}
         </div>
@@ -292,7 +293,7 @@ export function CalendarView() {
       <Card className="overflow-hidden">
         <div className="max-h-[700px] overflow-y-auto">
           {viewMode === 'week' ? (
-            <div className="min-w-[800px]">
+            <div className="w-full">
               {/* Header with days */}
               <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b sticky top-0 z-20 bg-card">
                 <div className="p-2 border-r bg-secondary/30 flex items-center justify-center">

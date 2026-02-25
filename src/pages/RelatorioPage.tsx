@@ -236,7 +236,7 @@ const RelatorioPage = () => {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                                     <div className="space-y-2">
                                         <Label htmlFor="clinic">Clínica/Empresa *</Label>
                                         <Select value={selectedClinicId} onValueChange={setSelectedClinicId}>
@@ -317,7 +317,7 @@ const RelatorioPage = () => {
                                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-[400px] p-0">
+                                            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[400px] p-0">
                                                 <Command>
                                                     <CommandInput placeholder="Digite o nome ou CPF..." />
                                                     <CommandList>
@@ -378,7 +378,7 @@ const RelatorioPage = () => {
                             </div>
                         </CardHeader>
                         <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 bg-muted/50 p-6 rounded-lg border border-border">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8 bg-muted/50 p-4 md:p-6 rounded-lg border border-border">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Clínica/Empresa</p>
                                     <p className="font-semibold text-lg">{reportData.clinicName}</p>
