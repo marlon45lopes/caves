@@ -303,9 +303,14 @@ export function CalendarView() {
                     <div
                       key={index}
                       className={cn(
-                        'p-4 text-center border-r last:border-r-0',
+                        'p-4 text-center border-r last:border-r-0 cursor-pointer hover:bg-accent/10 transition-colors',
                         isToday && 'bg-primary/5'
                       )}
+                      onClick={() => {
+                        setCurrentDate(day);
+                        setViewMode('day');
+                      }}
+                      title={`Ver agendamentos de ${format(day, "d 'de' MMMM", { locale: ptBR })}`}
                     >
                       <p className="text-sm text-muted-foreground capitalize">
                         {format(day, 'EEE', { locale: ptBR })}
