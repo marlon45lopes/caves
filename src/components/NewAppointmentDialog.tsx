@@ -73,7 +73,7 @@ const formSchema = z.object({
     profissional: z.string().optional(),
     observacoes: z.string().optional(),
     atendimento_online: z.boolean().default(false),
-    tipo_horario: z.enum(['hora_marcada', 'ordem_chegada']).default('hora_marcada'),
+    tipo_horario: z.enum(['hora_marcada', 'ordem_chegada']).default('ordem_chegada'),
 });
 
 interface NewAppointmentDialogProps {
@@ -125,7 +125,7 @@ export function NewAppointmentDialog({
             profissional: '',
             observacoes: '',
             atendimento_online: false,
-            tipo_horario: 'hora_marcada',
+            tipo_horario: 'ordem_chegada',
         },
     });
 
@@ -176,7 +176,7 @@ export function NewAppointmentDialog({
                 observacoes: '',
                 profissional: '',
                 atendimento_online: false,
-                tipo_horario: 'hora_marcada',
+                tipo_horario: 'ordem_chegada',
             });
         }
     }, [open, initialDate, initialTime, initialClinicId, initialSpecialtyId, form]);
@@ -641,18 +641,18 @@ export function NewAppointmentDialog({
                                                 >
                                                     <FormItem className="flex items-center space-x-2 space-y-0">
                                                         <FormControl>
-                                                            <RadioGroupItem value="hora_marcada" />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal cursor-pointer">
-                                                            Hora Marcada
-                                                        </FormLabel>
-                                                    </FormItem>
-                                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                                        <FormControl>
                                                             <RadioGroupItem value="ordem_chegada" />
                                                         </FormControl>
                                                         <FormLabel className="font-normal cursor-pointer">
                                                             Ordem de Chegada
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                                        <FormControl>
+                                                            <RadioGroupItem value="hora_marcada" />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal cursor-pointer">
+                                                            Hora Marcada
                                                         </FormLabel>
                                                     </FormItem>
                                                 </RadioGroup>
