@@ -41,11 +41,16 @@ const PacientesPage = () => {
   // Only Admin or Atendente can create/edit patients
   const canModify = isAdmin || isAtendente;
 
-  const filteredPatients = patients?.filter((p) =>
-    p.nome.toLowerCase().includes(search.toLowerCase()) ||
-    p.cpf?.includes(search) ||
-    p.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredPatients = search.length >= 3
+    ? patients?.filter((p) => {
+      const searchTerms = search.toLowerCase().trim().replace(/[.\-]/g, '');
+      const nameMatch = p.nome.toLowerCase().includes(searchTerms);
+      const cpfClean = (p.cpf || '').replace(/[.\-]/g, '');
+      const cpfMatch = cpfClean.includes(searchTerms);
+      const emailMatch = p.email?.toLowerCase().includes(searchTerms);
+      return nameMatch || cpfMatch || emailMatch;
+    })
+    : [];
 
   const handleEdit = (patient: Patient) => {
     if (!canModify) return;
@@ -95,7 +100,7 @@ const PacientesPage = () => {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar paciente por nome, CPF ou email..."
+              placeholder="Buscar paciente por nome ou CPF (mín. 3 caracteres)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -118,20 +123,42 @@ const PacientesPage = () => {
               </Card>
             ))}
           </div>
+        ) : search.length < 3 ? (
+          <Card className="p-12 text-center border-dashed bg-secondary/10">
+            <div className="max-w-xs mx-auto space-y-3">
+              <Search className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+              <div className="space-y-1">
+                <p className="text-lg font-medium text-foreground">Pesquisar Pacientes</p>
+                <p className="text-sm text-muted-foreground">
+                  Digite ao menos 3 caracteres para buscar por nome ou CPF.
+                </p>
+              </div>
+            </div>
+          </Card>
         ) : filteredPatients?.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">Nenhum paciente encontrado</p>
+          <Card className="p-12 text-center border-dashed">
+            <div className="max-w-xs mx-auto space-y-2">
+              <Plus className="h-8 w-8 text-muted-foreground/30 mx-auto" />
+              <p className="text-muted-foreground font-medium">Nenhum paciente encontrado para "{search}"</p>
+              {canModify && (
+                <Button variant="outline" size="sm" onClick={handleNewPatient} className="mt-2">
+                  Cadastrar novo paciente
+                </Button>
+              )}
+            </div>
           </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredPatients?.map((patient) => (
               <Card
                 key={patient.id}
-                className="p-4 hover:shadow-md transition-shadow"
+                className="p-4 hover:shadow-md transition-shadow border-l-4 border-l-primary/20"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-foreground">{patient.nome}</h3>
-                  <div className="flex gap-1">
+                  <h3 className="font-semibold text-foreground truncate mr-2" title={patient.nome}>
+                    {patient.nome}
+                  </h3>
+                  <div className="flex gap-1 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -158,7 +185,7 @@ const PacientesPage = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => setDeletePatient(patient as Patient)}
                         title="Excluir"
                       >
@@ -169,23 +196,23 @@ const PacientesPage = () => {
                 </div>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   {patient.cpf && (
-                    <p>CPF: {patient.cpf}</p>
+                    <p className="font-medium text-foreground/80">CPF: {patient.cpf}</p>
                   )}
                   {patient.telefone && (
                     <p className="flex items-center gap-2">
-                      <Phone className="h-3 w-3" />
+                      <Phone className="h-3 w-3 shrink-0" />
                       {patient.telefone}
                     </p>
                   )}
                   {patient.email && (
-                    <p className="flex items-center gap-2">
-                      <Mail className="h-3 w-3" />
+                    <p className="flex items-center gap-2 truncate" title={patient.email}>
+                      <Mail className="h-3 w-3 shrink-0" />
                       {patient.email}
                     </p>
                   )}
                   {patient.empresa && (
-                    <p className="flex items-center gap-2">
-                      <Building2 className="h-3 w-3" />
+                    <p className="flex items-center gap-2 truncate" title={patient.empresa}>
+                      <Building2 className="h-3 w-3 shrink-0" />
                       {patient.empresa}
                     </p>
                   )}
