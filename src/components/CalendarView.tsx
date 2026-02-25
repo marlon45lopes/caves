@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Printer } from 'lucide-react';
 import { format, addDays, startOfWeek, addWeeks, subWeeks, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
+import { generateAppointmentsReport } from '@/utils/pdfGenerator';
+import { toast } from 'sonner';
 
 type ViewMode = 'day' | 'week';
 
@@ -183,6 +185,52 @@ export function CalendarView() {
     setNewAppointmentOpen(true);
   };
 
+  const handlePrintReport = () => {
+    if (!appointments) return;
+
+    let filteredAppointments = [];
+    let dateRangeLabel = "";
+    let reportTitle = "";
+    let fileNamePrefix = "";
+
+    if (viewMode === 'week') {
+      const Monday = weekDays[0];
+      const Sunday = weekDays[6];
+      dateRangeLabel = `${format(Monday, 'dd/MM/yyyy')} a ${format(Sunday, 'dd/MM/yyyy')}`;
+      reportTitle = "Relatório Semanal de Agendamentos";
+      fileNamePrefix = "Relatorio_Semanal";
+
+      filteredAppointments = appointments.filter(apt => {
+        const aptDate = new Date(apt.data + 'T00:00:00');
+        const monDate = new Date(Monday);
+        monDate.setHours(0, 0, 0, 0);
+        const sunDate = new Date(Sunday);
+        sunDate.setHours(23, 59, 59, 999);
+        return aptDate >= monDate && aptDate <= sunDate;
+      });
+    } else {
+      const dateStr = format(currentDate, 'dd/MM/yyyy');
+      dateRangeLabel = dateStr;
+      reportTitle = "Relatório Diário de Agendamentos";
+      fileNamePrefix = "Relatorio_Diario";
+
+      const currentDayStr = format(currentDate, 'yyyy-MM-dd');
+      filteredAppointments = appointments.filter(apt => apt.data === currentDayStr);
+    }
+
+    const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+      if (a.data !== b.data) return a.data.localeCompare(b.data);
+      return (a.hora_inicio || '').localeCompare(b.hora_inicio || '');
+    });
+
+    if (sortedAppointments.length === 0) {
+      toast.error(`Nenhum agendamento encontrado para este ${viewMode === 'week' ? 'período' : 'dia'}`);
+      return;
+    }
+
+    generateAppointmentsReport(sortedAppointments, dateRangeLabel, reportTitle, fileNamePrefix);
+  };
+
   const gridDuration = useMemo(() => {
     if (selectedSpecialtyName !== 'all' && specialties) {
       const spec = specialties.find(s => s.nome === selectedSpecialtyName);
@@ -290,13 +338,24 @@ export function CalendarView() {
               <TabsTrigger value="week">Semana</TabsTrigger>
             </TabsList>
           </Tabs>
-          {canCreateAppointment && (
-            <Button onClick={() => handleNewAppointment()} className="whitespace-nowrap">
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="hidden xs:inline">Novo Agendamento</span>
-              <span className="xs:hidden">Novo</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePrintReport}
+              title={viewMode === 'week' ? "Relatório Semanal" : "Relatório Diário"}
+              className="hidden sm:flex"
+            >
+              <Printer className="h-4 w-4" />
             </Button>
-          )}
+            {canCreateAppointment && (
+              <Button onClick={() => handleNewAppointment()} className="whitespace-nowrap">
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="hidden xs:inline">Novo Agendamento</span>
+                <span className="xs:hidden">Novo</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

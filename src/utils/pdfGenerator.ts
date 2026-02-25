@@ -548,3 +548,63 @@ export const generatePatientHistoryReport = (patient: any, appointments: any[]) 
     const fileName = `Historico_${patient.nome?.replace(/\s+/g, '_') || 'Paciente'}.pdf`;
     doc.save(fileName);
 };
+
+export const generateAppointmentsReport = (appointments: Appointment[], dateRangeLabel: string, reportTitle: string, fileNamePrefix: string) => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.width;
+    const timestamp = format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR });
+
+    // Header
+    doc.setFontSize(18);
+    doc.text(reportTitle, pageWidth / 2, 15, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(dateRangeLabel, pageWidth / 2, 22, { align: 'center' });
+
+    // Table
+    autoTable(doc, {
+        startY: 30,
+        head: [['PACIENTE', 'TELEFONE', 'CPF', 'ESPECIALIDADE', 'OBSERVAÇÕES', 'DATA/HORA', 'CLÍNICA']],
+        body: appointments.map(apt => {
+            const cleanObs = (apt.observacoes || '')
+                .replace('[ONLINE]', '')
+                .replace('[CHEGADA]', '')
+                .trim();
+
+            return [
+                apt.paciente?.nome?.toUpperCase() || '-',
+                apt.paciente?.telefone || '-',
+                apt.paciente?.cpf || '-',
+                apt.especialidade?.nome?.toUpperCase() || '-',
+                cleanObs || '-',
+                `${format(new Date(apt.data + 'T00:00:00'), 'dd/MM/yy')} ${apt.hora_inicio?.slice(0, 5) || ''}`,
+                apt.clinica?.nome?.toUpperCase() || '-'
+            ];
+        }),
+        headStyles: { fillColor: [41, 128, 185], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 7, overflow: 'linebreak' },
+        columnStyles: {
+            0: { cellWidth: 50 }, // Paciente
+            1: { cellWidth: 30 }, // Telefone
+            2: { cellWidth: 30 }, // CPF
+            3: { cellWidth: 40 }, // Especialidade
+            4: { cellWidth: 'auto' }, // Observações (takes remaining space)
+            5: { cellWidth: 25 }, // Data/Hora
+            6: { cellWidth: 40 }  // Clínica
+        },
+        theme: 'grid'
+    });
+
+    // Footer
+    const pageCount = (doc as any).getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        const pageHeight = doc.internal.pageSize.height;
+        doc.text(`Gerado em: ${timestamp}`, 14, pageHeight - 10);
+        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
+    }
+
+    const safeRange = dateRangeLabel.replace(/[/\\?%*:|"<>]/g, '-').replace(/\s+/g, '_');
+    doc.save(`${fileNamePrefix}_${safeRange}.pdf`);
+};
