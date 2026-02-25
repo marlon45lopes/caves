@@ -173,20 +173,21 @@ export function CalendarView() {
     setNewAppointmentOpen(true);
   };
 
-  const PIXELS_PER_HOUR = 100;
-  const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60;
+  const gridDuration = useMemo(() => {
+    if (selectedSpecialtyName !== 'all' && specialties) {
+      const spec = specialties.find(s => s.nome === selectedSpecialtyName);
+      if (spec?.duracao_minutos) return spec.duracao_minutos;
+    }
+    return 60;
+  }, [selectedSpecialtyName, specialties]);
+
+  const PIXELS_PER_SLOT = 100;
+  const PIXELS_PER_MINUTE = PIXELS_PER_SLOT / gridDuration;
   const CALENDAR_START_MINUTES = 360; // 06:00
   const CALENDAR_END_MINUTES = 1080; // 18:00
 
   const gridSlots = useMemo(() => {
     const slots = [];
-
-    // Find duration for the grid
-    let duration = 60;
-    if (selectedSpecialtyName !== 'all' && specialties) {
-      const spec = specialties.find(s => s.nome === selectedSpecialtyName);
-      if (spec?.duracao_minutos) duration = spec.duracao_minutos;
-    }
 
     let current = CALENDAR_START_MINUTES;
     while (current < CALENDAR_END_MINUTES) {
@@ -195,12 +196,12 @@ export function CalendarView() {
       slots.push({
         time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
         startMinutes: current,
-        duration
+        duration: gridDuration
       });
-      current += duration;
+      current += gridDuration;
     }
     return slots;
-  }, [selectedSpecialtyName, specialties]);
+  }, [gridDuration]);
 
   const getMinutes = (timeStr: string | null) => {
     if (!timeStr) return 480; // Default 8:00
