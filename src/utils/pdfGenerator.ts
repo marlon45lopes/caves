@@ -177,7 +177,11 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
     doc.text('Este documento é um comprovante simples de agendamento.', 105, pageHeight - 10, { align: 'center' });
 
     // Save
-    const fileName = `comprovante_${appointment.paciente?.nome?.replace(/\s+/g, '_') || 'agendamento'}_${appointment.data}.pdf`;
+    const patientName = appointment.paciente?.nome?.trim().replace(/\s+/g, '_') || 'Paciente';
+    const specialtyName = appointment.especialidade?.nome?.trim().replace(/\s+/g, '_') || 'Especialidade';
+    const clinicName = appointment.clinica?.nome?.trim().replace(/\s+/g, '_') || 'Clinica';
+
+    const fileName = `comprovante_${patientName}_${specialtyName}_${clinicName}.pdf`;
     doc.save(fileName);
 };
 
@@ -456,7 +460,11 @@ export const generateGuide = (appointment: Appointment) => {
     doc.text('CAVES - Caixa de Assistência ao Vigilante - SE | Sistema de Gestão de Saúde', 105, pageHeight - 8, { align: 'center' });
 
     // Save
-    const fileName = `guia_${appointment.paciente?.nome?.replace(/\s+/g, '_') || 'atendimento'}_${appointment.data}.pdf`;
+    const patientName = appointment.paciente?.nome?.trim().replace(/\s+/g, '_') || 'Paciente';
+    const specialtyName = appointment.especialidade?.nome?.trim().replace(/\s+/g, '_') || 'Especialidade';
+    const clinicName = appointment.clinica?.nome?.trim().replace(/\s+/g, '_') || 'Clinica';
+
+    const fileName = `guia_${patientName}_${specialtyName}_${clinicName}.pdf`;
     doc.save(fileName);
 };
 
