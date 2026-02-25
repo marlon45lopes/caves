@@ -70,6 +70,14 @@ export function CalendarView() {
     return Array.from({ length: 7 }, (_, i) => addDays(currentDate, i));
   }, [currentDate]);
 
+  const gridTemplateColumns = useMemo(() => {
+    return `60px ${weekDays.map(day => day.getDay() === 0 ? '40px' : '1fr').join(' ')}`;
+  }, [weekDays]);
+
+  const overlayTemplateColumns = useMemo(() => {
+    return weekDays.map(day => day.getDay() === 0 ? '40px' : '1fr').join(' ');
+  }, [weekDays]);
+
   const getAppointmentsForDate = (date: Date) => {
     if (!appointments) return [];
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -296,12 +304,30 @@ export function CalendarView() {
           {viewMode === 'week' ? (
             <div className="w-full">
               {/* Header with days */}
-              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b sticky top-0 z-20 bg-card">
+              <div
+                className="grid border-b sticky top-0 z-20 bg-card"
+                style={{ gridTemplateColumns }}
+              >
                 <div className="p-2 border-r bg-secondary/30 flex items-center justify-center">
                   <span className="text-xs text-muted-foreground">Hora</span>
                 </div>
                 {weekDays.map((day, index) => {
                   const isToday = isSameDay(day, new Date());
+                  const isSunday = day.getDay() === 0;
+
+                  if (isSunday) {
+                    return (
+                      <div
+                        key={index}
+                        className="flex flex-col items-center justify-center p-1 border-r bg-muted/20 opacity-50 select-none cursor-default"
+                        title="Domingo (Sem agendamentos)"
+                      >
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Dom</span>
+                        <span className="text-xs font-light text-muted-foreground">{format(day, 'd')}</span>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={index}
@@ -339,24 +365,36 @@ export function CalendarView() {
                 {gridSlots.map((slot) => (
                   <div
                     key={slot.time}
-                    className="grid grid-cols-[60px_repeat(7,1fr)] border-b last:border-b-0"
-                    style={{ height: `${slot.duration * PIXELS_PER_MINUTE}px` }}
+                    className="grid border-b last:border-b-0"
+                    style={{
+                      height: `${slot.duration * PIXELS_PER_MINUTE}px`,
+                      gridTemplateColumns
+                    }}
                   >
                     <div className="py-2 px-1 text-[10px] text-muted-foreground border-r bg-secondary/30 flex items-start justify-center">
                       {slot.time}
                     </div>
-                    {weekDays.map((_, dayIndex) => (
-                      <div
-                        key={dayIndex}
-                        className="border-r last:border-r-0 h-full hover:bg-accent/5 transition-colors cursor-pointer"
-                        onClick={() => canCreateAppointment && handleNewAppointment(weekDays[dayIndex], slot.time)}
-                      />
-                    ))}
+                    {weekDays.map((day, dayIndex) => {
+                      const isSunday = day.getDay() === 0;
+                      if (isSunday) {
+                        return <div key={dayIndex} className="bg-muted/5 border-r" />;
+                      }
+                      return (
+                        <div
+                          key={dayIndex}
+                          className="border-r last:border-r-0 h-full hover:bg-accent/5 transition-colors cursor-pointer"
+                          onClick={() => canCreateAppointment && handleNewAppointment(day, slot.time)}
+                        />
+                      );
+                    })}
                   </div>
                 ))}
 
                 {/* Appointments Overlay */}
-                <div className="absolute top-0 left-[60px] right-0 bottom-0 pointer-events-none grid grid-cols-7">
+                <div
+                  className="absolute top-0 left-[60px] right-0 bottom-0 pointer-events-none grid"
+                  style={{ gridTemplateColumns: overlayTemplateColumns }}
+                >
                   {weekDays.map((day, dayIndex) => {
                     const positionedAppointments = getPositionedAppointments(day);
                     return (
