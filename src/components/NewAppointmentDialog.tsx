@@ -350,424 +350,429 @@ export function NewAppointmentDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className={selectedPatientId && hasSidebarData ? "sm:max-w-[800px]" : "sm:max-w-[425px]"}>
-                <DialogHeader>
-                    <DialogTitle>Novo Agendamento</DialogTitle>
+            <DialogContent className={cn(
+                "max-h-[95vh] flex flex-col p-0 overflow-hidden",
+                selectedPatientId && hasSidebarData ? "w-[95vw] sm:max-w-[850px]" : "w-[95vw] sm:max-w-[450px]"
+            )}>
+                <DialogHeader className="p-6 pb-2">
+                    <DialogTitle className="text-lg font-semibold">Novo Agendamento</DialogTitle>
                 </DialogHeader>
 
-                <div className={selectedPatientId && hasSidebarData ? "flex gap-6" : ""}>
-                    {/* Form Column */}
-                    <div className={selectedPatientId && hasSidebarData ? "flex-1" : "w-full"}>
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="flex-1 overflow-y-auto p-6 pt-0">
+                    <div className={selectedPatientId && hasSidebarData ? "flex flex-col md:flex-row gap-6" : ""}>
+                        {/* Form Column */}
+                        <div className={selectedPatientId && hasSidebarData ? "flex-1" : "w-full"}>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-                                {/* Paciente */}
-                                <FormField
-                                    control={form.control}
-                                    name="paciente_id"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                            <FormLabel>Paciente</FormLabel>
-                                            <Popover open={patientOpen} onOpenChange={setPatientOpen}>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            aria-expanded={patientOpen}
-                                                            className={cn(
-                                                                "w-full justify-between",
-                                                                !field.value && "text-muted-foreground"
-                                                            )}
-                                                        >
-                                                            {field.value
-                                                                ? patients?.find((patient) => patient.id === field.value)?.nome
-                                                                : "Selecione um paciente..."}
-                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[400px] p-0">
-                                                    <Command shouldFilter={false}>
-                                                        <CommandInput
-                                                            placeholder="Buscar por nome ou CPF (mín. 3 caracteres)..."
-                                                            value={patientSearch}
-                                                            onValueChange={setPatientSearch}
-                                                        />
-                                                        <CommandList>
-                                                            {patientSearch.length < 3 ? (
-                                                                <div className="py-6 text-center text-sm text-muted-foreground">
-                                                                    Digite ao menos 3 caracteres para buscar
-                                                                </div>
-                                                            ) : (
-                                                                <>
-                                                                    <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
-                                                                    <CommandGroup>
-                                                                        {patients
-                                                                            ?.filter((patient) => {
-                                                                                const search = patientSearch.toLowerCase().replace(/[.\-]/g, '');
-                                                                                const nameMatch = patient.nome.toLowerCase().includes(search);
-                                                                                const cpfClean = (patient.cpf || '').replace(/[.\-]/g, '');
-                                                                                const cpfMatch = cpfClean.includes(search);
-                                                                                return nameMatch || cpfMatch;
-                                                                            })
-                                                                            .map((patient) => (
-                                                                                <CommandItem
-                                                                                    value={patient.nome}
-                                                                                    key={patient.id}
-                                                                                    onSelect={() => {
-                                                                                        form.setValue("paciente_id", patient.id);
-                                                                                        setPatientOpen(false);
-                                                                                        setPatientSearch('');
-                                                                                    }}
-                                                                                >
-                                                                                    <Check
-                                                                                        className={cn(
-                                                                                            "mr-2 h-4 w-4",
-                                                                                            patient.id === field.value
-                                                                                                ? "opacity-100"
-                                                                                                : "opacity-0"
-                                                                                        )}
-                                                                                    />
-                                                                                    <div className="flex flex-col">
-                                                                                        <span>{patient.nome}</span>
-                                                                                        {patient.cpf && (
-                                                                                            <span className="text-xs text-muted-foreground">
-                                                                                                CPF: {patient.cpf}
-                                                                                            </span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </CommandItem>
-                                                                            ))}
-                                                                    </CommandGroup>
-                                                                </>
-                                                            )}
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                {/* Professional Name */}
-                                <FormField
-                                    control={form.control}
-                                    name="profissional"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Nome do Profissional</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Digite o nome do médico/profissional" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    {/* Clínica */}
+                                    {/* Paciente */}
                                     <FormField
                                         control={form.control}
-                                        name="clinica_id"
+                                        name="paciente_id"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Clínica</FormLabel>
-                                                <Select
-                                                    onValueChange={(value) => {
-                                                        field.onChange(value);
-                                                        form.setValue('especialidade_id', ''); // Reset specialty when clinic changes
-                                                    }}
-                                                    value={field.value}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Selecione" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {clinics?.map((clinic) => (
-                                                            <SelectItem key={clinic.id} value={clinic.id}>
-                                                                {clinic.nome}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {/* Especialidade */}
-                                    <FormField
-                                        control={form.control}
-                                        name="especialidade_id"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Especialidade</FormLabel>
-                                                <Select
-                                                    onValueChange={field.onChange}
-                                                    value={field.value}
-                                                    disabled={!selectedClinicId}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Selecione" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {filteredSpecialties?.map((spec) => (
-                                                            <SelectItem key={spec.id} value={spec.id}>
-                                                                {spec.nome}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Data */}
-                                <FormField
-                                    control={form.control}
-                                    name="data"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                            <FormLabel>Data</FormLabel>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant={"outline"}
-                                                            className={cn(
-                                                                "w-full pl-3 text-left font-normal",
-                                                                !field.value && "text-muted-foreground"
-                                                            )}
-                                                        >
-                                                            {field.value ? (
-                                                                format(field.value, "PPP", { locale: ptBR })
-                                                            ) : (
-                                                                <span>Selecione uma data</span>
-                                                            )}
-                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        onSelect={field.onChange}
-                                                        disabled={(date) =>
-                                                            date < new Date(new Date().setHours(0, 0, 0, 0))
-                                                        }
-                                                        initialFocus
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    {/* Hora Início */}
-                                    <FormField
-                                        control={form.control}
-                                        name="hora_inicio"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Início</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="00:00" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {timeSlots.map((time) => (
-                                                            <SelectItem key={`start-${time}`} value={time}>
-                                                                {time}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {/* Hora Fim */}
-                                    <FormField
-                                        control={form.control}
-                                        name="hora_fim"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Fim</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="00:00" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {timeSlots.map((time) => (
-                                                            <SelectItem key={`end-${time}`} value={time}>
-                                                                {time}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                <FormField
-                                    control={form.control}
-                                    name="tipo_horario"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-3">
-                                            <FormLabel>Tipo de Horário</FormLabel>
-                                            <FormControl>
-                                                <RadioGroup
-                                                    onValueChange={field.onChange}
-                                                    defaultValue={field.value}
-                                                    className="flex gap-4"
-                                                >
-                                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                            <FormItem className="flex flex-col">
+                                                <FormLabel>Paciente</FormLabel>
+                                                <Popover open={patientOpen} onOpenChange={setPatientOpen}>
+                                                    <PopoverTrigger asChild>
                                                         <FormControl>
-                                                            <RadioGroupItem value="ordem_chegada" />
+                                                            <Button
+                                                                variant="outline"
+                                                                role="combobox"
+                                                                aria-expanded={patientOpen}
+                                                                className={cn(
+                                                                    "w-full justify-between",
+                                                                    !field.value && "text-muted-foreground"
+                                                                )}
+                                                            >
+                                                                {field.value
+                                                                    ? patients?.find((patient) => patient.id === field.value)?.nome
+                                                                    : "Selecione um paciente..."}
+                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                            </Button>
                                                         </FormControl>
-                                                        <FormLabel className="font-normal cursor-pointer">
-                                                            Ordem de Chegada
-                                                        </FormLabel>
-                                                    </FormItem>
-                                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-[400px] p-0">
+                                                        <Command shouldFilter={false}>
+                                                            <CommandInput
+                                                                placeholder="Buscar por nome ou CPF (mín. 3 caracteres)..."
+                                                                value={patientSearch}
+                                                                onValueChange={setPatientSearch}
+                                                            />
+                                                            <CommandList>
+                                                                {patientSearch.length < 3 ? (
+                                                                    <div className="py-6 text-center text-sm text-muted-foreground">
+                                                                        Digite ao menos 3 caracteres para buscar
+                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                                                                        <CommandGroup>
+                                                                            {patients
+                                                                                ?.filter((patient) => {
+                                                                                    const search = patientSearch.toLowerCase().replace(/[.\-]/g, '');
+                                                                                    const nameMatch = patient.nome.toLowerCase().includes(search);
+                                                                                    const cpfClean = (patient.cpf || '').replace(/[.\-]/g, '');
+                                                                                    const cpfMatch = cpfClean.includes(search);
+                                                                                    return nameMatch || cpfMatch;
+                                                                                })
+                                                                                .map((patient) => (
+                                                                                    <CommandItem
+                                                                                        value={patient.nome}
+                                                                                        key={patient.id}
+                                                                                        onSelect={() => {
+                                                                                            form.setValue("paciente_id", patient.id);
+                                                                                            setPatientOpen(false);
+                                                                                            setPatientSearch('');
+                                                                                        }}
+                                                                                    >
+                                                                                        <Check
+                                                                                            className={cn(
+                                                                                                "mr-2 h-4 w-4",
+                                                                                                patient.id === field.value
+                                                                                                    ? "opacity-100"
+                                                                                                    : "opacity-0"
+                                                                                            )}
+                                                                                        />
+                                                                                        <div className="flex flex-col">
+                                                                                            <span>{patient.nome}</span>
+                                                                                            {patient.cpf && (
+                                                                                                <span className="text-xs text-muted-foreground">
+                                                                                                    CPF: {patient.cpf}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </CommandItem>
+                                                                                ))}
+                                                                        </CommandGroup>
+                                                                    </>
+                                                                )}
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* Professional Name */}
+                                    <FormField
+                                        control={form.control}
+                                        name="profissional"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Nome do Profissional</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Digite o nome do médico/profissional" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Clínica */}
+                                        <FormField
+                                            control={form.control}
+                                            name="clinica_id"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Clínica</FormLabel>
+                                                    <Select
+                                                        onValueChange={(value) => {
+                                                            field.onChange(value);
+                                                            form.setValue('especialidade_id', ''); // Reset specialty when clinic changes
+                                                        }}
+                                                        value={field.value}
+                                                    >
                                                         <FormControl>
-                                                            <RadioGroupItem value="hora_marcada" />
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Selecione" />
+                                                            </SelectTrigger>
                                                         </FormControl>
-                                                        <FormLabel className="font-normal cursor-pointer">
-                                                            Hora Marcada
-                                                        </FormLabel>
-                                                    </FormItem>
-                                                </RadioGroup>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="atendimento_online"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                            <div className="space-y-0.5">
-                                                <FormLabel className="text-sm font-medium">Atendimento Online</FormLabel>
-                                            </div>
-                                            <FormControl>
-                                                <div
-                                                    onClick={() => field.onChange(!field.value)}
-                                                    className="flex items-center gap-2 cursor-pointer group"
-                                                >
-                                                    <div className={cn(
-                                                        "w-10 h-5 rounded-full border transition-all relative flex items-center px-1",
-                                                        field.value ? "bg-purple-100 border-purple-300" : "bg-secondary border-input"
-                                                    )}>
-                                                        <div className={cn(
-                                                            "w-3 h-3 rounded-full transition-all shadow-sm",
-                                                            field.value ? "bg-purple-500 ml-auto" : "bg-muted-foreground/30 ml-0"
-                                                        )} />
-                                                    </div>
-                                                </div>
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="observacoes"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Observações</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                    placeholder="Detalhes adicionais (opcional)"
-                                                    className="resize-none h-24"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                {/* Alerta de Validade de Exame */}
-                                {isBlocked && !isReleased && (
-                                    <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
-                                        <p className="text-sm font-semibold text-destructive">
-                                            {blockReason === 'penalty' ? (
-                                                <>⚠️ Este paciente possui uma falta registrada nos últimos 15 dias. Agendamentos de Consultas e Exames estão suspensos temporariamente por este período.</>
-                                            ) : (
-                                                <>⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.</>
+                                                        <SelectContent>
+                                                            {clinics?.map((clinic) => (
+                                                                <SelectItem key={clinic.id} value={clinic.id}>
+                                                                    {clinic.nome}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
                                             )}
-                                        </p>
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                            size="sm"
-                                            className="w-full"
-                                            onClick={() => setIsReleased(true)}
-                                        >
-                                            Liberar com Justificativa
-                                        </Button>
-                                    </div>
-                                )}
-
-                                {isBlocked && isReleased && (
-                                    <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-2">
-                                        <FormLabel className="text-blue-700">Justificativa para liberação *</FormLabel>
-                                        <Textarea
-                                            placeholder="Descreva o motivo da liberação deste agendamento..."
-                                            className="resize-none h-20 border-blue-300"
-                                            value={justificativa}
-                                            onChange={(e) => setJustificativa(e.target.value)}
                                         />
-                                        <p className="text-[10px] text-blue-600">A justificativa será incluída nas observações do agendamento.</p>
-                                    </div>
-                                )}
 
-                                <DialogFooter>
-                                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                                        Cancelar
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        disabled={
-                                            createAppointment.isPending ||
-                                            historyLoading ||
-                                            pendingLoading ||
-                                            (isBlocked && !isReleased) ||
-                                            (isReleased && !justificativa.trim())
-                                        }
-                                    >
-                                        {(createAppointment.isPending || historyLoading || pendingLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        {historyLoading ? 'Verificando...' : 'Agendar'}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </Form>
+                                        {/* Especialidade */}
+                                        <FormField
+                                            control={form.control}
+                                            name="especialidade_id"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Especialidade</FormLabel>
+                                                    <Select
+                                                        onValueChange={field.onChange}
+                                                        value={field.value}
+                                                        disabled={!selectedClinicId}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Selecione" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {filteredSpecialties?.map((spec) => (
+                                                                <SelectItem key={spec.id} value={spec.id}>
+                                                                    {spec.nome}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    {/* Data */}
+                                    <FormField
+                                        control={form.control}
+                                        name="data"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-col">
+                                                <FormLabel>Data</FormLabel>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button
+                                                                variant={"outline"}
+                                                                className={cn(
+                                                                    "w-full pl-3 text-left font-normal",
+                                                                    !field.value && "text-muted-foreground"
+                                                                )}
+                                                            >
+                                                                {field.value ? (
+                                                                    format(field.value, "PPP", { locale: ptBR })
+                                                                ) : (
+                                                                    <span>Selecione uma data</span>
+                                                                )}
+                                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <Calendar
+                                                            mode="single"
+                                                            selected={field.value}
+                                                            onSelect={field.onChange}
+                                                            disabled={(date) =>
+                                                                date < new Date(new Date().setHours(0, 0, 0, 0))
+                                                            }
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Hora Início */}
+                                        <FormField
+                                            control={form.control}
+                                            name="hora_inicio"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Início</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="00:00" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {timeSlots.map((time) => (
+                                                                <SelectItem key={`start-${time}`} value={time}>
+                                                                    {time}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {/* Hora Fim */}
+                                        <FormField
+                                            control={form.control}
+                                            name="hora_fim"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Fim</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="00:00" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {timeSlots.map((time) => (
+                                                                <SelectItem key={`end-${time}`} value={time}>
+                                                                    {time}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    <FormField
+                                        control={form.control}
+                                        name="tipo_horario"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-3">
+                                                <FormLabel>Tipo de Horário</FormLabel>
+                                                <FormControl>
+                                                    <RadioGroup
+                                                        onValueChange={field.onChange}
+                                                        defaultValue={field.value}
+                                                        className="flex gap-4"
+                                                    >
+                                                        <FormItem className="flex items-center space-x-2 space-y-0">
+                                                            <FormControl>
+                                                                <RadioGroupItem value="ordem_chegada" />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal cursor-pointer">
+                                                                Ordem de Chegada
+                                                            </FormLabel>
+                                                        </FormItem>
+                                                        <FormItem className="flex items-center space-x-2 space-y-0">
+                                                            <FormControl>
+                                                                <RadioGroupItem value="hora_marcada" />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal cursor-pointer">
+                                                                Hora Marcada
+                                                            </FormLabel>
+                                                        </FormItem>
+                                                    </RadioGroup>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="atendimento_online"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                                <div className="space-y-0.5">
+                                                    <FormLabel className="text-sm font-medium">Atendimento Online</FormLabel>
+                                                </div>
+                                                <FormControl>
+                                                    <div
+                                                        onClick={() => field.onChange(!field.value)}
+                                                        className="flex items-center gap-2 cursor-pointer group"
+                                                    >
+                                                        <div className={cn(
+                                                            "w-10 h-5 rounded-full border transition-all relative flex items-center px-1",
+                                                            field.value ? "bg-purple-100 border-purple-300" : "bg-secondary border-input"
+                                                        )}>
+                                                            <div className={cn(
+                                                                "w-3 h-3 rounded-full transition-all shadow-sm",
+                                                                field.value ? "bg-purple-500 ml-auto" : "bg-muted-foreground/30 ml-0"
+                                                            )} />
+                                                        </div>
+                                                    </div>
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="observacoes"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Observações</FormLabel>
+                                                <FormControl>
+                                                    <Textarea
+                                                        placeholder="Detalhes adicionais (opcional)"
+                                                        className="resize-none h-24"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* Alerta de Validade de Exame */}
+                                    {isBlocked && !isReleased && (
+                                        <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
+                                            <p className="text-sm font-semibold text-destructive">
+                                                {blockReason === 'penalty' ? (
+                                                    <>⚠️ Este paciente possui uma falta registrada nos últimos 15 dias. Agendamentos de Consultas e Exames estão suspensos temporariamente por este período.</>
+                                                ) : (
+                                                    <>⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.</>
+                                                )}
+                                            </p>
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                className="w-full"
+                                                onClick={() => setIsReleased(true)}
+                                            >
+                                                Liberar com Justificativa
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {isBlocked && isReleased && (
+                                        <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-2">
+                                            <FormLabel className="text-blue-700">Justificativa para liberação *</FormLabel>
+                                            <Textarea
+                                                placeholder="Descreva o motivo da liberação deste agendamento..."
+                                                className="resize-none h-20 border-blue-300"
+                                                value={justificativa}
+                                                onChange={(e) => setJustificativa(e.target.value)}
+                                            />
+                                            <p className="text-[10px] text-blue-600">A justificativa será incluída nas observações do agendamento.</p>
+                                        </div>
+                                    )}
+
+                                    <DialogFooter>
+                                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                            Cancelar
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            disabled={
+                                                createAppointment.isPending ||
+                                                historyLoading ||
+                                                pendingLoading ||
+                                                (isBlocked && !isReleased) ||
+                                                (isReleased && !justificativa.trim())
+                                            }
+                                        >
+                                            {(createAppointment.isPending || historyLoading || pendingLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            {historyLoading ? 'Verificando...' : 'Agendar'}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </Form>
+                        </div>
                     </div>
 
                     {/* Sidebar Panel - Only show if patient selected and has appointments */}
                     {selectedPatientId && hasSidebarData && (
-                        <div className="w-[320px] border-l pl-4">
+                        <div className="w-full md:w-[320px] border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-4">
                             <Tabs defaultValue="pending" className="w-full">
                                 <TabsList className="grid w-full grid-cols-2 mb-4">
                                     <TabsTrigger value="pending" className="text-xs">Abertos</TabsTrigger>
