@@ -82,73 +82,74 @@ export function CalendarView() {
 
     // 1. Initial positioning and sorting
     const items = dayAppointments.map(apt => {
-      let startMinutes: number;
-      let duration: number;
+      const start = getMinutes(apt.hora_inicio);
 
-      if (apt.inicio_em && apt.fim_em) {
-        const start = new Date(apt.inicio_em);
-        const end = new Date(apt.fim_em);
-        startMinutes = start.getHours() * 60 + start.getMinutes();
-        duration = (end.getTime() - start.getTime()) / 60000;
-      } else {
-        startMinutes = getMinutes(apt.hora_inicio);
-        duration = apt.duracao_minutos || 30;
+      // Try to get duration from hora_fim, then duracao_minutos, then default 30
+      let end = getMinutes(apt.hora_fim);
+      if (!end || end <= start) {
+        end = start + (apt.duracao_minutos || 30);
       }
+      const duration = end - start;
 
       return {
         ...apt,
-        startMinutes,
-        endMinutes: startMinutes + duration,
-        top: (startMinutes - CALENDAR_START_MINUTES) * PIXELS_PER_MINUTE,
+        startMinutes: start,
+        endMinutes: end,
+        top: (start - CALENDAR_START_MINUTES) * PIXELS_PER_MINUTE,
         height: Math.max(duration * PIXELS_PER_MINUTE, 25),
       };
-    }).sort((a, b) => a.startMinutes - b.startMinutes || b.duration - a.duration);
+    }).sort((a, b) => a.startMinutes - b.startMinutes || (b.endMinutes - b.startMinutes) - (a.endMinutes - a.startMinutes));
 
-    // 2. Group into clusters of overlapping appointments
-    const clusters: any[][] = [];
+    // 2. Assign columns using a greedy approach
+    const columns: any[][] = [];
+    const processedItems: any[] = [];
+
+    items.forEach(item => {
+      let colIndex = -1;
+      for (let i = 0; i < columns.length; i++) {
+        const lastInCol = columns[i][columns[i].length - 1];
+        if (item.startMinutes >= lastInCol.endMinutes) {
+          colIndex = i;
+          columns[i].push(item);
+          break;
+        }
+      }
+      if (colIndex === -1) {
+        colIndex = columns.length;
+        columns.push([item]);
+      }
+      processedItems.push({ ...item, colIndex });
+    });
+
+    // 3. Group into clusters of overlapping appointments
+    const results: any[] = [];
     let currentCluster: any[] = [];
     let clusterEnd = 0;
 
-    items.forEach(item => {
+    processedItems.forEach(item => {
       if (item.startMinutes < clusterEnd) {
         currentCluster.push(item);
         clusterEnd = Math.max(clusterEnd, item.endMinutes);
       } else {
-        if (currentCluster.length > 0) clusters.push(currentCluster);
+        if (currentCluster.length > 0) finalizeCluster(currentCluster, results);
         currentCluster = [item];
         clusterEnd = item.endMinutes;
       }
     });
-    if (currentCluster.length > 0) clusters.push(currentCluster);
-
-    // 3. For each cluster, assign columns
-    const results: any[] = [];
-    clusters.forEach(cluster => {
-      const columns: any[][] = [];
-      cluster.forEach(item => {
-        let placed = false;
-        for (let i = 0; i < columns.length; i++) {
-          const lastInCol = columns[i][columns[i].length - 1];
-          if (item.startMinutes >= lastInCol.endMinutes) {
-            columns[i].push(item);
-            placed = true;
-            break;
-          }
-        }
-        if (!placed) columns.push([item]);
-      });
-
-      cluster.forEach(item => {
-        const colIndex = columns.findIndex(col => col.includes(item));
-        results.push({
-          ...item,
-          colIndex,
-          totalCols: columns.length
-        });
-      });
-    });
+    if (currentCluster.length > 0) finalizeCluster(currentCluster, results);
 
     return results;
+  };
+
+  const finalizeCluster = (cluster: any[], results: any[]) => {
+    // totalCols should be the maximum number of columns used in this cluster
+    const maxCols = new Set(cluster.map(i => i.colIndex)).size;
+    cluster.forEach(item => {
+      results.push({
+        ...item,
+        totalCols: Math.max(maxCols, 1)
+      });
+    });
   };
 
   const navigate = (direction: 'prev' | 'next') => {
@@ -360,30 +361,26 @@ export function CalendarView() {
                     const positionedAppointments = getPositionedAppointments(day);
                     return (
                       <div key={format(day, 'yyyy-MM-dd')} className="relative h-full border-r last:border-r-0 pointer-events-none">
-                        {positionedAppointments.map((apt: any) => {
-                          const width = 100 / apt.totalCols;
-                          const left = apt.colIndex * width;
-
-                          return (
-                            <div
-                              key={apt.id}
-                              className="absolute z-10 pointer-events-auto"
-                              style={{
-                                top: `${apt.top}px`,
-                                height: `${apt.height}px`,
-                                left: `${left}%`,
-                                width: `${width * 0.9}%`,
-                                padding: '1px'
-                              }}
-                            >
-                              <AppointmentCard
-                                appointment={apt}
-                                variant="compact"
-                                onClick={() => handleAppointmentClick(apt)}
-                              />
-                            </div>
-                          );
-                        })}
+                        {positionedAppointments.map((apt: any) => (
+                          <div
+                            key={apt.id}
+                            className="absolute z-10 pointer-events-auto"
+                            style={{
+                              top: `${apt.top}px`,
+                              height: `${apt.height}px`,
+                              left: `${(100 / apt.totalCols) * apt.colIndex}%`,
+                              width: `${(100 / apt.totalCols) * 0.9}%`,
+                              padding: '1px',
+                              zIndex: 10 + apt.colIndex // Ensure later overlapping items are on top
+                            }}
+                          >
+                            <AppointmentCard
+                              appointment={apt}
+                              variant="compact"
+                              onClick={() => handleAppointmentClick(apt)}
+                            />
+                          </div>
+                        ))}
                       </div>
                     );
                   })}
@@ -410,29 +407,25 @@ export function CalendarView() {
               ))}
               {/* Day View Appointments Overlay */}
               <div className="absolute top-0 left-20 right-0 bottom-0 pointer-events-none">
-                {getPositionedAppointments(currentDate).map((apt: any) => {
-                  const width = 100 / apt.totalCols;
-                  const left = apt.colIndex * width;
-
-                  return (
-                    <div
-                      key={apt.id}
-                      className="absolute z-10 pointer-events-auto"
-                      style={{
-                        top: `${apt.top}px`,
-                        height: `${apt.height}px`,
-                        left: `${left}%`,
-                        width: `${width * 0.9}%`,
-                        padding: '2px'
-                      }}
-                    >
-                      <AppointmentCard
-                        appointment={apt}
-                        onClick={() => handleAppointmentClick(apt)}
-                      />
-                    </div>
-                  );
-                })}
+                {getPositionedAppointments(currentDate).map((apt: any) => (
+                  <div
+                    key={apt.id}
+                    className="absolute z-10 pointer-events-auto"
+                    style={{
+                      top: `${apt.top}px`,
+                      height: `${apt.height}px`,
+                      left: `${(100 / apt.totalCols) * apt.colIndex}%`,
+                      width: `${(100 / apt.totalCols) * 0.9}%`,
+                      padding: '2px',
+                      zIndex: 10 + apt.colIndex
+                    }}
+                  >
+                    <AppointmentCard
+                      appointment={apt}
+                      onClick={() => handleAppointmentClick(apt)}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           )}
