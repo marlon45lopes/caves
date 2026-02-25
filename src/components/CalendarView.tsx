@@ -190,7 +190,7 @@ export function CalendarView() {
     return 60;
   }, [selectedSpecialtyName, specialties]);
 
-  const PIXELS_PER_SLOT = 100;
+  const PIXELS_PER_SLOT = 160;
   const PIXELS_PER_MINUTE = PIXELS_PER_SLOT / gridDuration;
   const CALENDAR_START_MINUTES = 360; // 06:00
   const CALENDAR_END_MINUTES = 1080; // 18:00
