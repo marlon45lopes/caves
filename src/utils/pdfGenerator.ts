@@ -100,12 +100,23 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
     if (cleanObservacoes) {
         const hasJustification = cleanObservacoes.includes('LIBERADO COM JUSTIFICATIVA:');
 
+        const checkPageSpace = (needed: number) => {
+            const pageHeight = doc.internal.pageSize.height;
+            if (yPos + needed > pageHeight - 20) {
+                doc.addPage();
+                yPos = 20;
+                return true;
+            }
+            return false;
+        };
+
         if (hasJustification) {
             const parts = cleanObservacoes.split('\n\n');
             const justificationPart = parts[0];
             const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
 
             // Section: Justificativa
+            checkPageSpace(lineHeight * 2);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(200, 0, 0); // Red for emphasis
             doc.text('Justificativa de Liberação:', 20, yPos);
@@ -113,12 +124,18 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
 
             doc.setFont('helvetica', 'bold');
             const splitJustification = doc.splitTextToSize(justificationPart.replace('LIBERADO COM JUSTIFICATIVA:', '').trim(), 170);
-            doc.text(splitJustification, 20, yPos);
-            yPos += (splitJustification.length * lineHeight);
+
+            // Handle multi-line justification with page breaks
+            splitJustification.forEach((line: string) => {
+                checkPageSpace(lineHeight);
+                doc.text(line, 20, yPos);
+                yPos += lineHeight;
+            });
 
             // Section: Other Observations
             if (otherObs) {
                 yPos += 5;
+                checkPageSpace(lineHeight * 2);
                 doc.setFont('helvetica', 'bold');
                 doc.setTextColor(0, 0, 0);
                 doc.text('Detalhes Adicionais (Observações):', 20, yPos);
@@ -126,11 +143,15 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
 
                 doc.setFont('helvetica', 'normal');
                 const splitOther = doc.splitTextToSize(otherObs, 170);
-                doc.text(splitOther, 20, yPos);
-                yPos += (splitOther.length * lineHeight);
+                splitOther.forEach((line: string) => {
+                    checkPageSpace(lineHeight);
+                    doc.text(line, 20, yPos);
+                    yPos += lineHeight;
+                });
             }
         } else {
             // General Observations
+            checkPageSpace(lineHeight * 2);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
             doc.text('Observações / Detalhes Adicionais:', 20, yPos);
@@ -138,8 +159,11 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
 
             doc.setFont('helvetica', 'normal');
             const splitObservacoes = doc.splitTextToSize(cleanObservacoes, 170);
-            doc.text(splitObservacoes, 20, yPos);
-            yPos += (splitObservacoes.length * lineHeight);
+            splitObservacoes.forEach((line: string) => {
+                checkPageSpace(lineHeight);
+                doc.text(line, 20, yPos);
+                yPos += lineHeight;
+            });
         }
 
         doc.setTextColor(0, 0, 0); // Reset color
@@ -300,6 +324,10 @@ export const generateGuide = (appointment: Appointment) => {
     doc.text(time, 120, serviceYPos);
 
     serviceYPos += 8;
+
+    const pageHeightLimit = doc.internal.pageSize.height;
+    const signatureLimit = pageHeightLimit - 85;
+
     // Observações
     if (cleanObservacoes) {
         doc.setFont('helvetica', 'bold');
@@ -313,16 +341,34 @@ export const generateGuide = (appointment: Appointment) => {
         }
 
         const splitObs = doc.splitTextToSize(cleanObservacoes, 135);
-        doc.text(splitObs, 55, serviceYPos);
-        serviceYPos += (splitObs.length * 5);
+
+        splitObs.forEach((line: string) => {
+            if (serviceYPos > signatureLimit) {
+                // Draw current box border before switching page
+                const startOfBox = doc.getNumberOfPages() > 1 ? 10 : serviceBoxTop;
+                doc.rect(10, startOfBox, 190, serviceYPos - startOfBox + 2);
+
+                doc.addPage();
+                serviceYPos = 20;
+                doc.rect(10, 10, 190, pageHeightLimit - 90);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Observações (continuação):', 15, serviceYPos);
+                serviceYPos += 8;
+                doc.setFont('helvetica', 'normal');
+                if (hasJustification) doc.setTextColor(200, 0, 0);
+            }
+            doc.text(line, 55, serviceYPos);
+            serviceYPos += 5;
+        });
 
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
     }
 
-    // Draw the service box outline AFTER calculating content height
-    const boxHeight = Math.max(60, serviceYPos - serviceBoxTop + 5);
-    doc.rect(10, serviceBoxTop, 190, boxHeight);
+    // Draw the final service box outline on the current page
+    const finalStartOfBox = doc.getNumberOfPages() > 1 ? 10 : serviceBoxTop;
+    const finalBoxHeight = Math.max(doc.getNumberOfPages() > 1 ? 20 : 60, serviceYPos - finalStartOfBox + 5);
+    doc.rect(10, finalStartOfBox, 190, finalBoxHeight);
 
     // ============================================================
     // SIGNATURE AREA - Fixed at bottom of page, isolated from content

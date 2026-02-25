@@ -203,47 +203,80 @@ export function AppointmentActionsDialog({
 
               {appointment.observacoes && (
                 <div className="mt-3 space-y-3">
-                  {appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:') ? (() => {
+                  {(() => {
+                    const ExpandableText = ({ text, title, isJustification = false }: { text: string, title: string, isJustification?: boolean }) => {
+                      const [isExpanded, setIsExpanded] = useState(false);
+                      // Character limit as a fallback for the "shouldTruncate" logic
+                      const maxLength = 60;
+                      const shouldTruncate = text.length > maxLength;
+
+                      return (
+                        <div className={cn(
+                          "p-3 rounded-md shadow-sm border",
+                          isJustification ? "bg-red-50 border-destructive/20" : "bg-white border-secondary"
+                        )}>
+                          <p className={cn(
+                            "text-[10px] font-bold mb-1 uppercase tracking-widest flex items-center gap-1",
+                            isJustification ? "text-destructive" : "text-muted-foreground"
+                          )}>
+                            <FileText className="h-3 w-3" />
+                            {title}
+                          </p>
+                          <div className="relative">
+                            <p className={cn(
+                              "text-sm whitespace-pre-wrap leading-relaxed",
+                              !isExpanded && "line-clamp-3",
+                              isJustification ? "text-destructive font-semibold" : "text-foreground"
+                            )}>
+                              {text}
+                            </p>
+                            {shouldTruncate && (
+                              <button
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className={cn(
+                                  "mt-1 text-xs font-bold transition-colors hover:underline flex items-center",
+                                  isJustification ? "text-destructive" : "text-primary"
+                                )}
+                              >
+                                {isExpanded ? 'Ver menos' : 'Ver mais'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    };
+
                     const parts = appointment.observacoes.split('\n\n');
-                    const justificationPart = parts[0];
-                    const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
+                    const hasJustification = appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:');
+
+                    if (hasJustification) {
+                      const justificationPart = parts[0].replace('LIBERADO COM JUSTIFICATIVA:', '').trim();
+                      const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
+
+                      return (
+                        <>
+                          <ExpandableText
+                            text={justificationPart}
+                            title="Justificativa de Liberação"
+                            isJustification={true}
+                          />
+                          {otherObs && (
+                            <ExpandableText
+                              text={otherObs}
+                              title="Detalhes Adicionais / Observações"
+                            />
+                          )}
+                        </>
+                      );
+                    }
 
                     return (
-                      <>
-                        <div className="p-3 bg-red-50 border border-destructive/20 rounded-md shadow-sm">
-                          <p className="text-[10px] font-bold text-destructive mb-1 uppercase tracking-widest flex items-center gap-1">
-                            <FileText className="h-3 w-3" />
-                            Justificativa de Liberação
-                          </p>
-                          <p className="text-sm font-semibold text-destructive whitespace-pre-wrap leading-relaxed">
-                            {justificationPart.replace('LIBERADO COM JUSTIFICATIVA:', '').trim()}
-                          </p>
-                        </div>
-
-                        {otherObs && (
-                          <div className="p-3 bg-white border border-secondary rounded-md shadow-sm">
-                            <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-widest flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              Detalhes Adicionais / Observações
-                            </p>
-                            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                              {otherObs}
-                            </p>
-                          </div>
-                        )}
-                      </>
+                      <ExpandableText
+                        text={appointment.observacoes.replace('[ONLINE]', '').trim()}
+                        title="Observações"
+                      />
                     );
-                  })() : (
-                    <div className="p-3 bg-white border border-secondary rounded-md shadow-sm">
-                      <p className="text-[10px] font-bold text-muted-foreground mb-1 uppercase tracking-widest flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        Observações
-                      </p>
-                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                        {appointment.observacoes}
-                      </p>
-                    </div>
-                  )}
+                  })()}
                 </div>
               )}
             </div>
