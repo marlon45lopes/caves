@@ -71,6 +71,7 @@ const formSchema = z.object({
     hora_fim: z.string().min(1, 'Selecione o horário de fim'),
     profissional: z.string().min(1, 'Informe o nome do profissional'),
     observacoes: z.string().optional(),
+    atendimento_online: z.boolean().default(false),
 });
 
 interface NewAppointmentDialogProps {
@@ -121,6 +122,7 @@ export function NewAppointmentDialog({
                 : '',
             profissional: '',
             observacoes: '',
+            atendimento_online: false,
         },
     });
 
@@ -170,6 +172,7 @@ export function NewAppointmentDialog({
                 hora_fim: endTime,
                 observacoes: '',
                 profissional: '',
+                atendimento_online: false,
             });
         }
     }, [open, initialDate, initialTime, initialClinicId, initialSpecialtyId, form]);
@@ -206,6 +209,12 @@ export function NewAppointmentDialog({
             const fim_em = new Date(`${dateStr}T${values.hora_fim}:00`).toISOString();
 
             let finalObservacoes = values.observacoes || '';
+
+            // Add Online marker if active
+            if (values.atendimento_online) {
+                finalObservacoes = `[ONLINE] ${finalObservacoes}`.trim();
+            }
+
             if (isReleased && justificativa) {
                 finalObservacoes = `LIBERADO COM JUSTIFICATIVA: ${justificativa}\n\n${finalObservacoes}`.trim();
             }
@@ -608,6 +617,34 @@ export function NewAppointmentDialog({
                                         )}
                                     />
                                 </div>
+
+                                <FormField
+                                    control={form.control}
+                                    name="atendimento_online"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-sm font-medium">Atendimento Online</FormLabel>
+                                            </div>
+                                            <FormControl>
+                                                <div
+                                                    onClick={() => field.onChange(!field.value)}
+                                                    className="flex items-center gap-2 cursor-pointer group"
+                                                >
+                                                    <div className={cn(
+                                                        "w-10 h-5 rounded-full border transition-all relative flex items-center px-1",
+                                                        field.value ? "bg-purple-100 border-purple-300" : "bg-secondary border-input"
+                                                    )}>
+                                                        <div className={cn(
+                                                            "w-3 h-3 rounded-full transition-all shadow-sm",
+                                                            field.value ? "bg-purple-500 ml-auto" : "bg-muted-foreground/30 ml-0"
+                                                        )} />
+                                                    </div>
+                                                </div>
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
 
                                 <FormField
                                     control={form.control}

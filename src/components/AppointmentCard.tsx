@@ -19,9 +19,18 @@ const statusColors: Record<string, string> = {
 };
 
 export function AppointmentCard({ appointment, onClick, variant = 'default' }: AppointmentCardProps) {
+  const isOnline = appointment.observacoes?.includes('[ONLINE]');
+
   const formatTime = (time: string | null) => {
     if (!time) return '--:--';
     return time.slice(0, 5);
+  };
+
+  const getStyle = () => {
+    if (isOnline) {
+      return 'bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200';
+    }
+    return statusColors[appointment.status] || 'bg-secondary border-secondary';
   };
 
   if (variant === 'compact') {
@@ -33,7 +42,7 @@ export function AppointmentCard({ appointment, onClick, variant = 'default' }: A
         }}
         className={cn(
           'h-full w-full cursor-pointer rounded border p-1 text-[10px] transition-colors',
-          statusColors[appointment.status] || 'bg-secondary border-secondary',
+          getStyle(),
           'flex flex-col gap-0.5 overflow-hidden'
         )}
         title={`${appointment.paciente?.nome} - ${appointment.especialidade?.nome}`}
@@ -46,11 +55,12 @@ export function AppointmentCard({ appointment, onClick, variant = 'default' }: A
             {formatTime(appointment.hora_inicio)}
           </span>
           <div className={cn("w-1.5 h-1.5 rounded-full", {
-            "bg-status-agendado": appointment.status === 'agendado',
-            "bg-status-compareceu": appointment.status === 'compareceu',
-            "bg-status-faltou": appointment.status === 'faltou',
-            "bg-status-cancelado": appointment.status === 'cancelado',
-            "bg-status-reagendado": appointment.status === 'reagendado',
+            "bg-purple-500": isOnline,
+            "bg-status-agendado": !isOnline && appointment.status === 'agendado',
+            "bg-status-compareceu": !isOnline && appointment.status === 'compareceu',
+            "bg-status-faltou": !isOnline && appointment.status === 'faltou',
+            "bg-status-cancelado": !isOnline && appointment.status === 'cancelado',
+            "bg-status-reagendado": !isOnline && appointment.status === 'reagendado',
           })} />
         </div>
       </div>
@@ -66,10 +76,10 @@ export function AppointmentCard({ appointment, onClick, variant = 'default' }: A
       className={cn(
         'group cursor-pointer border-l-4 p-4 transition-all duration-200',
         'hover:shadow-md hover:scale-[1.02]',
-        statusColors[appointment.status] || 'bg-card border-l-status-' + appointment.status
+        isOnline ? 'bg-purple-100 border-l-purple-500 text-purple-700 hover:bg-purple-200' : (statusColors[appointment.status] || 'bg-card border-l-status-' + appointment.status)
       )}
       style={{
-        borderLeftColor: `hsl(var(--status-${appointment.status}))`,
+        borderLeftColor: isOnline ? '#A855F7' : `hsl(var(--status-${appointment.status}))`,
       }}
     >
       <div className="flex items-start justify-between gap-3">

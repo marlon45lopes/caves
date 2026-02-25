@@ -36,6 +36,7 @@ export interface Appointment {
     nome: string;
     duracao_minutos?: number | null;
   };
+  atendimento_online?: boolean | null;
 }
 
 export interface Patient {

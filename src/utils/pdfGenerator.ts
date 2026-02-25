@@ -80,18 +80,28 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
         yPos += lineHeight;
     }
 
+    const isOnline = appointment.observacoes?.includes('[ONLINE]');
+    const cleanObservacoes = appointment.observacoes?.replace('[ONLINE]', '').trim();
+
     if (appointment.profissional) {
         doc.text(`Profissional: ${appointment.profissional}`, 20, yPos);
         yPos += lineHeight;
     }
 
+    if (isOnline) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('CONSULTA ONLINE', 20, yPos);
+        doc.setFont('helvetica', 'normal');
+        yPos += lineHeight;
+    }
+
     yPos += 5; // Spacing before observations
 
-    if (appointment.observacoes) {
-        const hasJustification = appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:');
+    if (cleanObservacoes) {
+        const hasJustification = cleanObservacoes.includes('LIBERADO COM JUSTIFICATIVA:');
 
         if (hasJustification) {
-            const parts = appointment.observacoes.split('\n\n');
+            const parts = cleanObservacoes.split('\n\n');
             const justificationPart = parts[0];
             const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
 
@@ -127,7 +137,7 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
             yPos += lineHeight;
 
             doc.setFont('helvetica', 'normal');
-            const splitObservacoes = doc.splitTextToSize(appointment.observacoes, 170);
+            const splitObservacoes = doc.splitTextToSize(cleanObservacoes, 170);
             doc.text(splitObservacoes, 20, yPos);
             yPos += (splitObservacoes.length * lineHeight);
         }
@@ -265,6 +275,17 @@ export const generateGuide = (appointment: Appointment) => {
         serviceYPos += 8;
     }
 
+    const isOnline = appointment.observacoes?.includes('[ONLINE]');
+    const cleanObservacoes = appointment.observacoes?.replace('[ONLINE]', '').trim();
+
+    if (isOnline) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('TIPO DE ATENDIMENTO:', 15, serviceYPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text('CONSULTA ONLINE', 70, serviceYPos);
+        serviceYPos += 8;
+    }
+
     // Data e Horário
     doc.setFont('helvetica', 'bold');
     doc.text('Data Agendada:', 15, serviceYPos);
@@ -280,18 +301,18 @@ export const generateGuide = (appointment: Appointment) => {
 
     serviceYPos += 8;
     // Observações
-    if (appointment.observacoes) {
+    if (cleanObservacoes) {
         doc.setFont('helvetica', 'bold');
         doc.text('Observações:', 15, serviceYPos);
         doc.setFont('helvetica', 'normal');
 
-        const hasJustification = appointment.observacoes.includes('LIBERADO COM JUSTIFICATIVA:');
+        const hasJustification = cleanObservacoes.includes('LIBERADO COM JUSTIFICATIVA:');
         if (hasJustification) {
             doc.setTextColor(200, 0, 0);
             doc.setFont('helvetica', 'bold');
         }
 
-        const splitObs = doc.splitTextToSize(appointment.observacoes, 135);
+        const splitObs = doc.splitTextToSize(cleanObservacoes, 135);
         doc.text(splitObs, 55, serviceYPos);
         serviceYPos += (splitObs.length * 5);
 
