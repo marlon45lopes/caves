@@ -5,6 +5,16 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Appointment } from '@/types/appointment';
 
+const cleanObservationText = (text: string | null | undefined) => {
+    if (!text) return '';
+    let cleaned = text.replace(/\[ONLINE\]/g, '').replace(/\[CHEGADA\]/g, '');
+    if (cleaned.includes('LIBERADO COM JUSTIFICATIVA:')) {
+        const parts = cleaned.split('\n\n');
+        cleaned = parts.filter(p => !p.includes('LIBERADO COM JUSTIFICATIVA:')).join('\n\n');
+    }
+    return cleaned.trim();
+};
+
 export const generateAppointmentReceipt = (appointment: Appointment) => {
     const doc = new jsPDF();
 
@@ -84,7 +94,7 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
     }
 
     const isOnline = appointment.observacoes?.includes('[ONLINE]');
-    const cleanObservacoes = appointment.observacoes?.replace('[ONLINE]', '').trim();
+    const cleanObservacoes = cleanObservationText(appointment.observacoes);
 
     if (appointment.profissional) {
         doc.text(`Profissional: ${appointment.profissional}`, 20, yPos);
@@ -101,8 +111,6 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
     yPos += 5; // Spacing before observations
 
     if (cleanObservacoes) {
-        const hasJustification = cleanObservacoes.includes('LIBERADO COM JUSTIFICATIVA:');
-
         const checkPageSpace = (needed: number) => {
             const pageHeight = doc.internal.pageSize.height;
             if (yPos + needed > pageHeight - 20) {
@@ -113,63 +121,20 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
             return false;
         };
 
-        if (hasJustification) {
-            const parts = cleanObservacoes.split('\n\n');
-            const justificationPart = parts[0];
-            const otherObs = parts.length > 1 ? parts.slice(1).join('\n\n') : '';
+        // General Observations
+        checkPageSpace(lineHeight * 2);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Observações / Detalhes Adicionais:', 20, yPos);
+        yPos += lineHeight;
 
-            // Section: Justificativa
-            checkPageSpace(lineHeight * 2);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(200, 0, 0); // Red for emphasis
-            doc.text('Justificativa de Liberação:', 20, yPos);
+        doc.setFont('helvetica', 'normal');
+        const splitObservacoes = doc.splitTextToSize(cleanObservacoes, 170);
+        splitObservacoes.forEach((line: string) => {
+            checkPageSpace(lineHeight);
+            doc.text(line, 20, yPos);
             yPos += lineHeight;
-
-            doc.setFont('helvetica', 'bold');
-            const splitJustification = doc.splitTextToSize(justificationPart.replace('LIBERADO COM JUSTIFICATIVA:', '').trim(), 170);
-
-            // Handle multi-line justification with page breaks
-            splitJustification.forEach((line: string) => {
-                checkPageSpace(lineHeight);
-                doc.text(line, 20, yPos);
-                yPos += lineHeight;
-            });
-
-            // Section: Other Observations
-            if (otherObs) {
-                yPos += 5;
-                checkPageSpace(lineHeight * 2);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(0, 0, 0);
-                doc.text('Detalhes Adicionais (Observações):', 20, yPos);
-                yPos += lineHeight;
-
-                doc.setFont('helvetica', 'normal');
-                const splitOther = doc.splitTextToSize(otherObs, 170);
-                splitOther.forEach((line: string) => {
-                    checkPageSpace(lineHeight);
-                    doc.text(line, 20, yPos);
-                    yPos += lineHeight;
-                });
-            }
-        } else {
-            // General Observations
-            checkPageSpace(lineHeight * 2);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            doc.text('Observações / Detalhes Adicionais:', 20, yPos);
-            yPos += lineHeight;
-
-            doc.setFont('helvetica', 'normal');
-            const splitObservacoes = doc.splitTextToSize(cleanObservacoes, 170);
-            splitObservacoes.forEach((line: string) => {
-                checkPageSpace(lineHeight);
-                doc.text(line, 20, yPos);
-                yPos += lineHeight;
-            });
-        }
-
-        doc.setTextColor(0, 0, 0); // Reset color
+        });
     }
 
     // Footer
@@ -308,7 +273,7 @@ export const generateGuide = (appointment: Appointment) => {
 
     const isOnline = appointment.observacoes?.includes('[ONLINE]');
     const isArrivingOrder = appointment.observacoes?.includes('[CHEGADA]');
-    const cleanObservacoes = appointment.observacoes?.replace('[ONLINE]', '').replace('[CHEGADA]', '').trim() || '';
+    const cleanObservacoes = cleanObservationText(appointment.observacoes);
 
     if (isOnline) {
         doc.setFont('helvetica', 'bold');
@@ -336,12 +301,6 @@ export const generateGuide = (appointment: Appointment) => {
         doc.text('Observações:', 15, serviceYPos);
         doc.setFont('helvetica', 'normal');
 
-        const hasJustification = cleanObservacoes.includes('LIBERADO COM JUSTIFICATIVA:');
-        if (hasJustification) {
-            doc.setTextColor(200, 0, 0);
-            doc.setFont('helvetica', 'bold');
-        }
-
         const splitObs = doc.splitTextToSize(cleanObservacoes, 135);
 
         splitObs.forEach((line: string) => {
@@ -357,7 +316,6 @@ export const generateGuide = (appointment: Appointment) => {
                 doc.text('Observações (continuação):', 15, serviceYPos);
                 serviceYPos += 8;
                 doc.setFont('helvetica', 'normal');
-                if (hasJustification) doc.setTextColor(200, 0, 0);
             }
             doc.text(line, 55, serviceYPos);
             serviceYPos += 5;
@@ -565,10 +523,7 @@ export const generateAppointmentsReport = (appointments: Appointment[], dateRang
         startY: 30,
         head: [['PACIENTE', 'TELEFONE', 'CPF', 'ESPECIALIDADE', 'OBSERVAÇÕES', 'DATA/HORA', 'CLÍNICA']],
         body: appointments.map(apt => {
-            const cleanObs = (apt.observacoes || '')
-                .replace('[ONLINE]', '')
-                .replace('[CHEGADA]', '')
-                .trim();
+            const cleanObs = cleanObservationText(apt.observacoes);
 
             return [
                 apt.paciente?.nome?.toUpperCase() || '-',
