@@ -91,32 +91,34 @@ export function PatientFormDialog({
   });
 
   useEffect(() => {
-    if (patient) {
-      form.reset({
-        nome: patient.nome || '',
-        cpf: patient.cpf || '',
-        telefone: patient.telefone || '',
-        email: patient.email || '',
-        sexo: patient.sexo || '',
-        data_nascimento: patient['data de nascimento'] || '',
-        matricula: patient.matricula || '',
-        empresa_id: patient.empresa_id || '',
-        tipo_paciente: patient.tipo_paciente || '',
-      });
-    } else {
-      form.reset({
-        nome: '',
-        cpf: '',
-        telefone: '',
-        email: '',
-        sexo: '',
-        data_nascimento: '',
-        matricula: '',
-        empresa_id: '',
-        tipo_paciente: '',
-      });
+    if (open) {
+      if (patient) {
+        form.reset({
+          nome: patient.nome || '',
+          cpf: patient.cpf || '',
+          telefone: patient.telefone || '',
+          email: patient.email || '',
+          sexo: patient.sexo || '',
+          data_nascimento: patient['data de nascimento'] || '',
+          matricula: patient.matricula || '',
+          empresa_id: patient.empresa_id || '',
+          tipo_paciente: patient.tipo_paciente || '',
+        });
+      } else {
+        form.reset({
+          nome: '',
+          cpf: '',
+          telefone: '',
+          email: '',
+          sexo: '',
+          data_nascimento: '',
+          matricula: '',
+          empresa_id: '',
+          tipo_paciente: '',
+        });
+      }
     }
-  }, [patient, form]);
+  }, [patient, form, open]);
 
   const onSubmit = async (data: PatientFormData) => {
     try {

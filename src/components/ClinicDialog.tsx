@@ -51,18 +51,20 @@ export function ClinicDialog({ open, onOpenChange, clinic }: ClinicDialogProps) 
     });
 
     useEffect(() => {
-        if (clinic) {
-            form.reset({
-                nome: clinic.nome,
-                telefone: clinic.telefone || '',
-                endereco: clinic.endereco || '',
-            });
-        } else {
-            form.reset({
-                nome: '',
-                telefone: '',
-                endereco: '',
-            });
+        if (open) {
+            if (clinic) {
+                form.reset({
+                    nome: clinic.nome,
+                    telefone: clinic.telefone || '',
+                    endereco: clinic.endereco || '',
+                });
+            } else {
+                form.reset({
+                    nome: '',
+                    telefone: '',
+                    endereco: '',
+                });
+            }
         }
     }, [clinic, form, open]);
 
@@ -70,12 +72,16 @@ export function ClinicDialog({ open, onOpenChange, clinic }: ClinicDialogProps) 
         try {
             if (clinic) {
                 await updateClinic.mutateAsync({
-                    id: clinic.id,
                     ...values,
+                    id: clinic.id,
+                    nome: values.nome || '',
                 });
                 toast.success('Clínica atualizada com sucesso!');
             } else {
-                await createClinic.mutateAsync(values);
+                await createClinic.mutateAsync({
+                    ...values,
+                    nome: values.nome || '',
+                });
                 toast.success('Clínica criada com sucesso!');
             }
             onOpenChange(false);

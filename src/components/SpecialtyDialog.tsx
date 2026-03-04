@@ -75,22 +75,24 @@ export function SpecialtyDialog({ open, onOpenChange, specialty }: SpecialtyDial
     });
 
     useEffect(() => {
-        if (specialty) {
-            form.reset({
-                nome: specialty.nome,
-                tipo: specialty.tipo || '',
-                duracao_minutos: specialty.duracao_minutos || 30,
-                clinica_id: specialty.clinica_id || '',
-                clinica_ids: [],
-            });
-        } else {
-            form.reset({
-                nome: '',
-                tipo: '',
-                duracao_minutos: 30,
-                clinica_id: '',
-                clinica_ids: [],
-            });
+        if (open) {
+            if (specialty) {
+                form.reset({
+                    nome: specialty.nome,
+                    tipo: specialty.tipo || '',
+                    duracao_minutos: specialty.duracao_minutos || 30,
+                    clinica_id: specialty.clinica_id || '',
+                    clinica_ids: [],
+                });
+            } else {
+                form.reset({
+                    nome: '',
+                    tipo: '',
+                    duracao_minutos: 30,
+                    clinica_id: '',
+                    clinica_ids: [],
+                });
+            }
         }
     }, [specialty, form, open]);
 
