@@ -42,6 +42,7 @@ import {
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCompanies, useCreatePatient, useUpdatePatient } from '@/hooks/useAppointments';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Patient } from '@/types/appointment';
 
@@ -122,6 +123,23 @@ export function PatientFormDialog({
 
   const onSubmit = async (data: PatientFormData) => {
     try {
+      if (!isEditing) {
+        // Check for duplicate patient (name and CPF)
+        const { data: existingPatients, error: searchError } = await supabase
+          .from('pacientes')
+          .select('id')
+          .ilike('nome', data.nome)
+          .eq('cpf', data.cpf || null)
+          .limit(1);
+
+        if (searchError) throw searchError;
+
+        if (existingPatients && existingPatients.length > 0) {
+          toast.error('Já existe um paciente cadastrado com este nome e CPF.');
+          return;
+        }
+      }
+
       const patientData = {
         nome: data.nome,
         cpf: data.cpf || null,
