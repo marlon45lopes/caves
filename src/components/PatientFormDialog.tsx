@@ -76,6 +76,7 @@ export function PatientFormDialog({
   const updatePatient = useUpdatePatient();
   const isEditing = !!patient;
   const [companySearch, setCompanySearch] = useState('');
+  const [openCompany, setOpenCompany] = useState(false);
 
   const form = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
@@ -326,7 +327,7 @@ export function PatientFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Empresa</FormLabel>
-                    <Popover>
+                    <Popover open={openCompany} onOpenChange={setOpenCompany}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -368,6 +369,7 @@ export function PatientFormDialog({
                                       onSelect={() => {
                                         form.setValue("empresa_id", company.id);
                                         setCompanySearch(''); // Reset search on select
+                                        setOpenCompany(false); // Close popover on select
                                       }}
                                     >
                                       <Check
