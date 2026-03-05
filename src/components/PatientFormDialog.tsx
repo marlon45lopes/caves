@@ -124,18 +124,26 @@ export function PatientFormDialog({
   const onSubmit = async (data: PatientFormData) => {
     try {
       if (!isEditing) {
-        // Check for duplicate patient (name and CPF)
-        const { data: existingPatients, error: searchError } = await supabase
-          .from('pacientes')
-          .select('id')
-          .ilike('nome', data.nome)
-          .eq('cpf', data.cpf || null)
-          .limit(1);
+        // Build query for duplicate check
+        let query = supabase.from('pacientes').select('id');
+        let errorMessage = '';
+
+        if (data.cpf) {
+          // If CPF is provided, it must be unique
+          query = query.eq('cpf', data.cpf);
+          errorMessage = 'Já existe um paciente cadastrado com este CPF.';
+        } else {
+          // Fallback to name check if CPF is not provided
+          query = query.ilike('nome', data.nome);
+          errorMessage = 'Já existe um paciente cadastrado com este nome.';
+        }
+
+        const { data: existingPatients, error: searchError } = await query.limit(1);
 
         if (searchError) throw searchError;
 
         if (existingPatients && existingPatients.length > 0) {
-          toast.error('Já existe um paciente cadastrado com este nome e CPF.');
+          toast.error(errorMessage);
           return;
         }
       }
