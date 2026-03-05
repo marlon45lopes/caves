@@ -75,6 +75,7 @@ export function PatientFormDialog({
   const createPatient = useCreatePatient();
   const updatePatient = useUpdatePatient();
   const isEditing = !!patient;
+  const [companySearch, setCompanySearch] = useState('');
 
   const form = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
@@ -347,30 +348,42 @@ export function PatientFormDialog({
                       </PopoverTrigger>
                       <PopoverContent className="w-[200px] p-0">
                         <Command>
-                          <CommandInput placeholder="Buscar empresa..." />
+                          <CommandInput
+                            placeholder="Buscar empresa..."
+                            onValueChange={setCompanySearch}
+                          />
                           <CommandList>
-                            <CommandEmpty>Nenhuma empresa encontrada.</CommandEmpty>
-                            <CommandGroup>
-                              {companies?.map((company) => (
-                                <CommandItem
-                                  value={company.nome}
-                                  key={company.id}
-                                  onSelect={() => {
-                                    form.setValue("empresa_id", company.id);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      company.id === field.value
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                  {company.nome}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
+                            {companySearch.length < 2 ? (
+                              <div className="py-6 text-center text-sm text-muted-foreground">
+                                Digite pelo menos 2 caracteres...
+                              </div>
+                            ) : (
+                              <>
+                                <CommandEmpty>Nenhuma empresa encontrada.</CommandEmpty>
+                                <CommandGroup>
+                                  {companies?.map((company) => (
+                                    <CommandItem
+                                      value={company.nome}
+                                      key={company.id}
+                                      onSelect={() => {
+                                        form.setValue("empresa_id", company.id);
+                                        setCompanySearch(''); // Reset search on select
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          company.id === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      {company.nome}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </>
+                            )}
                           </CommandList>
                         </Command>
                       </PopoverContent>
