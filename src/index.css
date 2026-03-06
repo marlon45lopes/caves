@@ -42,10 +42,10 @@ All colors MUST be HSL.
     /* Status colors */
     --status-agendado: 200 85% 45%;
     --status-compareceu: 145 65% 35%;
-    --status-faltou: 48 95% 35%;
+    --status-faltou: 340 75% 50%;
     --status-cancelado: 0 72% 40%;
     --status-reagendado: 25 95% 45%;
-    --status-medico-ausente: 340 75% 50%;
+    --status-medico-ausente: 48 95% 35%;
 
     /* Sidebar */
     /* Sidebar */

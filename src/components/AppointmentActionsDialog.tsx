@@ -324,7 +324,7 @@ export function AppointmentActionsDialog({
                   Compareceu
                 </Button>
                 <Button
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-1 text-[11px] h-10"
+                  className="bg-status-faltou hover:bg-status-faltou/90 text-white px-1 text-[11px] h-10"
                   onClick={handleFaltou}
                   disabled={updateStatus.isPending || deleteAppointment.isPending}
                 >
