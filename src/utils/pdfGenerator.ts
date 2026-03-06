@@ -475,7 +475,7 @@ export const generatePatientHistoryReport = (patient: any, appointments: any[]) 
             apt.data ? format(new Date(apt.data + 'T00:00:00'), 'dd/MM/yyyy') : '-',
             apt.clinica?.nome || '-',
             apt.especialidade?.nome || '-',
-            apt.status === 'compareceu' ? 'Compareceu' : (apt.status === 'faltou' ? 'Faltou' : (apt.status === 'agendado' ? 'Agendado' : apt.status)),
+            apt.status === 'compareceu' ? 'Compareceu' : (apt.status === 'faltou' ? 'Faltou' : (apt.status === 'medico_ausente' ? 'Médico Ausente' : (apt.status === 'agendado' ? 'Agendado' : apt.status))),
             apt.profissional || '-',
             apt.observacoes || '-'
         ]),

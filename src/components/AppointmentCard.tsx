@@ -16,6 +16,7 @@ const statusColors: Record<string, string> = {
   faltou: 'bg-status-faltou/30 border-status-faltou/50 text-status-faltou hover:bg-status-faltou/40',
   cancelado: 'bg-status-cancelado/30 border-status-cancelado/50 text-status-cancelado hover:bg-status-cancelado/40',
   reagendado: 'bg-status-reagendado/30 border-status-reagendado/50 text-status-reagendado hover:bg-status-reagendado/40',
+  medico_ausente: 'bg-status-medico-ausente/30 border-status-medico-ausente/50 text-status-medico-ausente hover:bg-status-medico-ausente/40',
 };
 
 export function AppointmentCard({ appointment, onClick, variant = 'default' }: AppointmentCardProps) {
@@ -61,6 +62,7 @@ export function AppointmentCard({ appointment, onClick, variant = 'default' }: A
             "bg-status-faltou": !isOnline && appointment.status === 'faltou',
             "bg-status-cancelado": !isOnline && appointment.status === 'cancelado',
             "bg-status-reagendado": !isOnline && appointment.status === 'reagendado',
+            "bg-status-medico-ausente": !isOnline && appointment.status === 'medico_ausente',
           })} />
         </div>
       </div>
@@ -79,7 +81,7 @@ export function AppointmentCard({ appointment, onClick, variant = 'default' }: A
         isOnline ? 'bg-purple-100 border-l-purple-500 text-purple-700 hover:bg-purple-200' : (statusColors[appointment.status] || 'bg-card border-l-status-' + appointment.status)
       )}
       style={{
-        borderLeftColor: isOnline ? '#A855F7' : `hsl(var(--status-${appointment.status}))`,
+        borderLeftColor: isOnline ? '#A855F7' : `hsl(var(--status-${appointment.status.replace('_', '-')}))`,
       }}
     >
       <div className="flex items-start justify-between gap-3">

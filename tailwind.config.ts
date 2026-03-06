@@ -64,6 +64,7 @@ export default {
           faltou: "hsl(var(--status-faltou))",
           cancelado: "hsl(var(--status-cancelado))",
           reagendado: "hsl(var(--status-reagendado))",
+          "medico-ausente": "hsl(var(--status-medico-ausente))",
         },
       },
       boxShadow: {

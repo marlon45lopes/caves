@@ -417,6 +417,7 @@ export const Constants = {
         "faltou",
         "cancelado",
         "reagendado",
+        "medico_ausente",
       ],
     },
   },

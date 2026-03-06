@@ -1,4 +1,4 @@
-export type AppointmentStatus = 'agendado' | 'compareceu' | 'faltou' | 'cancelado' | 'reagendado';
+export type AppointmentStatus = 'agendado' | 'compareceu' | 'faltou' | 'cancelado' | 'reagendado' | 'medico_ausente';
 export type ScheduleType = 'hora_marcada' | 'ordem_chegada';
 
 export interface Appointment {
@@ -89,4 +89,5 @@ export const statusLabels: Record<AppointmentStatus, string> = {
   faltou: 'Faltou',
   cancelado: 'Cancelado',
   reagendado: 'Reagendado',
+  medico_ausente: 'Médico Ausente',
 };

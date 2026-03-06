@@ -589,7 +589,7 @@ export function usePatientHistoryAppointments(patientId?: string, months: number
           especialidade:especialidades(nome)
         `)
         .eq('paciente_id', patientId)
-        .in('status', ['compareceu', 'faltou'])
+        .in('status', ['compareceu', 'faltou', 'medico_ausente'])
         .gte('data', dateLimit)
         .order('data', { ascending: false })
         .order('hora_inicio', { ascending: false });

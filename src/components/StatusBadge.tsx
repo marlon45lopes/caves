@@ -13,6 +13,7 @@ const statusStyles: Record<AppointmentStatus, string> = {
   faltou: 'bg-status-faltou/30 text-status-faltou border-status-faltou/50',
   cancelado: 'bg-status-cancelado/30 text-status-cancelado border-status-cancelado/50',
   reagendado: 'bg-status-reagendado/30 text-status-reagendado border-status-reagendado/50',
+  medico_ausente: 'bg-status-medico-ausente/30 text-status-medico-ausente border-status-medico-ausente/50',
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {

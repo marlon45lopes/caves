@@ -11,7 +11,8 @@ import {
   User,
   Building2,
   Download,
-  Trash2
+  Trash2,
+  UserX
 } from 'lucide-react';
 import { generateAppointmentReceipt, generateGuide } from '@/utils/pdfGenerator';
 import {
@@ -85,6 +86,16 @@ export function AppointmentActionsDialog({
       onOpenChange(false);
     } catch (error) {
       toast.error('Erro ao registrar falta');
+    }
+  };
+
+  const handleMedicoAusente = async () => {
+    try {
+      await updateStatus.mutateAsync({ id: appointment.id, status: 'medico_ausente' });
+      toast.success('Ausência do médico registrada com sucesso!');
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('Erro ao registrar ausência do médico');
     }
   };
 
@@ -303,22 +314,30 @@ export function AppointmentActionsDialog({
 
             {/* Status Actions */}
             <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <Button
-                  className="flex-1 bg-status-compareceu hover:bg-status-compareceu/90"
+                  className="bg-status-compareceu hover:bg-status-compareceu/90 text-white px-1 text-[11px] h-10"
                   onClick={handleConfirm}
                   disabled={updateStatus.isPending || deleteAppointment.isPending}
                 >
-                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <CheckCircle className="h-3.5 w-3.5 mr-1 shrink-0" />
                   Compareceu
                 </Button>
                 <Button
-                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-1 text-[11px] h-10"
                   onClick={handleFaltou}
                   disabled={updateStatus.isPending || deleteAppointment.isPending}
                 >
-                  <XCircle className="h-4 w-4 mr-2" />
+                  <XCircle className="h-3.5 w-3.5 mr-1 shrink-0" />
                   Faltou
+                </Button>
+                <Button
+                  className="bg-status-medico-ausente hover:bg-status-medico-ausente/90 text-white px-1 text-[11px] h-10"
+                  onClick={handleMedicoAusente}
+                  disabled={updateStatus.isPending || deleteAppointment.isPending}
+                >
+                  <UserX className="h-3.5 w-3.5 mr-1 shrink-0" />
+                  Médico Ausente
                 </Button>
               </div>
 
