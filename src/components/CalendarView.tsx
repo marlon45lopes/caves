@@ -41,17 +41,34 @@ export function CalendarView() {
 
   const [selectedClinicId, setSelectedClinicId] = useState<string>('all');
   const [selectedSpecialtyName, setSelectedSpecialtyName] = useState<string>('all');
-
-  // Auto-select clinic if user belongs to one
-  useEffect(() => {
-    if (profile?.clinica_id) {
-      setSelectedClinicId(profile.clinica_id);
-    }
-  }, [profile]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const { data: appointments, isLoading } = useAppointments(undefined, selectedClinicId, selectedSpecialtyName);
   const { data: clinics } = useClinics(true);
   const { data: specialties, isLoading: isSpecialtiesLoading } = useSpecialties();
+
+  // Handle default filters for Admin/Atendente
+  useEffect(() => {
+    if (isInitialLoad && clinics && specialties && (isAdmin || isAtendente)) {
+      const cactusClinic = clinics.find(c => c.nome.toLowerCase().includes('cactus'));
+      const generalSpecialty = specialties.find(s => s.nome.toLowerCase().includes('clinico geral'));
+
+      if (cactusClinic) {
+        setSelectedClinicId(cactusClinic.id);
+      }
+      if (generalSpecialty) {
+        setSelectedSpecialtyName(generalSpecialty.nome);
+      }
+      setIsInitialLoad(false);
+    }
+  }, [isInitialLoad, clinics, specialties, isAdmin, isAtendente]);
+
+  // Auto-select clinic if user belongs to one (CLINICA role)
+  useEffect(() => {
+    if (profile?.clinica_id && isClinica) {
+      setSelectedClinicId(profile.clinica_id);
+    }
+  }, [profile, isClinica]);
 
   const filteredSpecialties = useMemo(() => {
     if (!specialties) return [];
