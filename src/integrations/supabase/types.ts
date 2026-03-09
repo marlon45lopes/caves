@@ -284,6 +284,7 @@ export type Database = {
       | "faltou"
       | "cancelado"
       | "reagendado"
+      | "medico_ausente"
     }
     CompositeTypes: {
       [_ in never]: never
