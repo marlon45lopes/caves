@@ -210,6 +210,12 @@ export function AppointmentActionsDialog({
                     <span>{appointment.clinica.nome}</span>
                   </div>
                 )}
+                {appointment.criado_por_nome && (
+                  <div className="flex items-center gap-2 text-muted-foreground col-span-2 italic">
+                    <UserPlus className="h-4 w-4" />
+                    <span>Agendado por: {appointment.criado_por_nome}</span>
+                  </div>
+                )}
               </div>
 
               {appointment.observacoes && (

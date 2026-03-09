@@ -16,6 +16,7 @@ export function useAppointments(date?: string, clinicId?: string | null, special
           *,
           paciente:pacientes(id, nome, cpf, telefone, email, tipo_paciente),
           clinica:clinicas(id, nome, endereco, telefone),
+          criado_por_nome,
           ${specialtySelect}
         `)
         .order('hora_inicio', { ascending: true });
@@ -46,7 +47,7 @@ export function useUpdateAppointmentStatus() {
     mutationFn: async ({ id, status }: { id: string; status: AppointmentStatus }) => {
       const { data, error } = await supabase
         .from('agendamentos')
-        .update({ status })
+        .update({ status } as any)
         .eq('id', id)
         .select()
         .single();
@@ -79,10 +80,11 @@ export function useUpdateAppointment() {
       duracao_minutos?: number;
       profissional?: string;
       observacoes?: string;
+      criado_por_nome?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('agendamentos')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();
@@ -138,10 +140,11 @@ export function useCreateAppointment() {
       empresa_id?: string | null;
       profissional?: string;
       observacoes?: string;
+      criado_por_nome?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('agendamentos')
-        .insert(appointment)
+        .insert(appointment as any)
         .select()
         .single();
 
@@ -589,7 +592,7 @@ export function usePatientHistoryAppointments(patientId?: string, months: number
           especialidade:especialidades(nome)
         `)
         .eq('paciente_id', patientId)
-        .in('status', ['compareceu', 'faltou', 'medico_ausente'])
+        .in('status', ['compareceu', 'faltou', 'medico_ausente'] as any)
         .gte('data', dateLimit)
         .order('data', { ascending: false })
         .order('hora_inicio', { ascending: false });

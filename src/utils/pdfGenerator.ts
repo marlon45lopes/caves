@@ -101,6 +101,11 @@ export const generateAppointmentReceipt = (appointment: Appointment) => {
         yPos += lineHeight;
     }
 
+    if (appointment.criado_por_nome) {
+        doc.text(`Agendado por: ${appointment.criado_por_nome}`, 20, yPos);
+        yPos += lineHeight;
+    }
+
     if (isOnline) {
         doc.setFont('helvetica', 'bold');
         doc.text('CONSULTA ONLINE', 20, yPos);
@@ -291,6 +296,14 @@ export const generateGuide = (appointment: Appointment) => {
     const scheduleTypeLabel = isArrivingOrder ? 'ORDEM DE CHEGADA' : 'HORA MARCADA';
     doc.text(`${dateFormatted} - ${appointment.hora_inicio?.slice(0, 5) || ''} (${scheduleTypeLabel})`, 55, serviceYPos);
     serviceYPos += 8;
+
+    if (appointment.criado_por_nome) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Agendado por:', 15, serviceYPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(appointment.criado_por_nome.toUpperCase(), 55, serviceYPos);
+        serviceYPos += 8;
+    }
 
     const pageHeightLimit = doc.internal.pageSize.height;
     const signatureLimit = pageHeightLimit - 85;

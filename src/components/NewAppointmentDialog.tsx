@@ -60,6 +60,7 @@ import {
     usePendingPatientAppointments,
     usePatientHistoryAppointments
 } from '@/hooks/useAppointments';
+import { useAuth } from '@/hooks/useAuth';
 
 const formSchema = z.object({
     paciente_id: z.string().min(1, 'Selecione um paciente'),
@@ -99,6 +100,7 @@ export function NewAppointmentDialog({
     const [patientSearch, setPatientSearch] = useState('');
     const { data: specialties } = useSpecialties();
     const createAppointment = useCreateAppointment();
+    const { profile } = useAuth();
 
     // Validity states
     const [isBlocked, setIsBlocked] = useState(false);
@@ -242,6 +244,7 @@ export function NewAppointmentDialog({
                 empresa_id: selectedPatient?.empresa_id || null,
                 profissional: values.profissional,
                 observacoes: finalObservacoes,
+                criado_por_nome: profile?.nome || null,
             });
 
             toast.success('Agendamento criado com sucesso!');

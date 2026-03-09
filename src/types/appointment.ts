@@ -39,6 +39,7 @@ export interface Appointment {
   };
   atendimento_online?: boolean | null;
   tipo_horario?: ScheduleType | null;
+  criado_por_nome?: string | null;
 }
 
 export interface Patient {
