@@ -38,6 +38,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PatientFormDialog } from '@/components/PatientFormDialog';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Loader2 } from 'lucide-react';
+import { calculateAge } from '@/utils/dateUtils';
 
 export default function PatientDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -173,7 +174,7 @@ export default function PatientDetailsPage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <Calendar className="h-4 w-4" />
-                                    <span>Nasc: {patient['data de nascimento'] ? format(new Date(patient['data de nascimento'] + 'T00:00:00'), 'dd/MM/yyyy') : 'Não informado'}</span>
+                                    <span>Nasc: {patient['data de nascimento'] ? `${format(new Date(patient['data de nascimento'] + 'T00:00:00'), 'dd/MM/yyyy')} (${calculateAge(new Date(patient['data de nascimento'] + 'T00:00:00'))})` : 'Não informado'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <Phone className="h-4 w-4" />
