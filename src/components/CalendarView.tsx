@@ -249,12 +249,20 @@ export function CalendarView() {
   };
 
   const gridDuration = useMemo(() => {
+    // Check if the currently selected clinic is Clinica Monteiro
+    if (selectedClinicId !== 'all' && clinics) {
+      const selectedClinic = clinics.find(c => c.id === selectedClinicId);
+      if (selectedClinic?.nome.toLowerCase().includes('monteiro')) {
+        return 60; // Force 60-minute intervals for Clinica Monteiro
+      }
+    }
+
     if (selectedSpecialtyName !== 'all' && specialties) {
       const spec = specialties.find(s => s.nome === selectedSpecialtyName);
       if (spec?.duracao_minutos) return spec.duracao_minutos;
     }
     return 60;
-  }, [selectedSpecialtyName, specialties]);
+  }, [selectedSpecialtyName, specialties, selectedClinicId, clinics]);
 
   const PIXELS_PER_SLOT = 160;
   const PIXELS_PER_MINUTE = PIXELS_PER_SLOT / gridDuration;
