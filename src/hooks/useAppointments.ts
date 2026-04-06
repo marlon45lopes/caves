@@ -175,6 +175,22 @@ export function usePatients() {
   });
 }
 
+export function useSearchPatients(search: string) {
+  return useQuery({
+    queryKey: ['patients-search', search],
+    queryFn: async () => {
+      if (search.length < 3) return [];
+      const { data, error } = await (supabase.rpc as any)('search_pacientes', {
+        search_text: search,
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: search.length >= 3,
+  });
+}
+
 export function useAwaitingStats(clinicId?: string | null) {
   return useQuery({
     queryKey: ['awaiting-stats', clinicId],

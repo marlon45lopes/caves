@@ -5,7 +5,7 @@ import { Layout } from '@/components/Layout';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { usePatients, useDeletePatient } from '@/hooks/useAppointments';
+import { usePatients, useSearchPatients, useDeletePatient } from '@/hooks/useAppointments';
 import { PatientFormDialog } from '@/components/PatientFormDialog';
 import { useAuth } from '@/hooks/useAuth';
 import type { Patient } from '@/types/appointment';
@@ -31,7 +31,7 @@ const PacientesPage = () => {
   const navigate = useNavigate();
 
   const { profile } = useAuth();
-  const { data: patients, isLoading } = usePatients();
+  const { data: patients, isLoading } = useSearchPatients(search);
   const deletePatientMutation = useDeletePatient();
 
   const isAdmin = profile?.role === 'ADMIN';
@@ -41,16 +41,7 @@ const PacientesPage = () => {
   // Only Admin or Atendente can create/edit patients
   const canModify = isAdmin || isAtendente;
 
-  const filteredPatients = search.length >= 3
-    ? patients?.filter((p) => {
-      const searchTerms = search.toLowerCase().trim().replace(/[.\-]/g, '');
-      const nameMatch = p.nome.toLowerCase().includes(searchTerms);
-      const cpfClean = (p.cpf || '').replace(/[.\-]/g, '');
-      const cpfMatch = cpfClean.includes(searchTerms);
-      const emailMatch = p.email?.toLowerCase().includes(searchTerms);
-      return nameMatch || cpfMatch || emailMatch;
-    })
-    : [];
+  const filteredPatients = patients || [];
 
   const handleEdit = (patient: Patient) => {
     if (!canModify) return;

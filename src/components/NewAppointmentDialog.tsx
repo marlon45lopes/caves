@@ -54,6 +54,7 @@ import { toast } from 'sonner';
 
 import {
     usePatients,
+    useSearchPatients,
     useClinics,
     useSpecialties,
     useCreateAppointment,
@@ -94,10 +95,10 @@ export function NewAppointmentDialog({
     initialClinicId,
     initialSpecialtyId
 }: NewAppointmentDialogProps) {
-    const { data: patients } = usePatients();
+    const [patientSearch, setPatientSearch] = useState('');
+    const { data: patients, isLoading: patientsLoading } = useSearchPatients(patientSearch);
     const { data: clinics } = useClinics(true); // Only active clinics
     const [patientOpen, setPatientOpen] = useState(false);
-    const [patientSearch, setPatientSearch] = useState('');
     const { data: specialties } = useSpecialties();
     const createAppointment = useCreateAppointment();
     const { profile } = useAuth();
@@ -424,15 +425,12 @@ export function NewAppointmentDialog({
                                                                     <>
                                                                         <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
                                                                         <CommandGroup>
-                                                                            {patients
-                                                                                ?.filter((patient) => {
-                                                                                    const search = patientSearch.toLowerCase().replace(/[.\-]/g, '');
-                                                                                    const nameMatch = patient.nome.toLowerCase().includes(search);
-                                                                                    const cpfClean = (patient.cpf || '').replace(/[.\-]/g, '');
-                                                                                    const cpfMatch = cpfClean.includes(search);
-                                                                                    return nameMatch || cpfMatch;
-                                                                                })
-                                                                                .map((patient) => (
+                                                                            {patientsLoading ? (
+                                                                                <div className="flex items-center justify-center py-6">
+                                                                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                                                                </div>
+                                                                            ) : (
+                                                                                patients?.map((patient) => (
                                                                                     <CommandItem
                                                                                         value={patient.nome}
                                                                                         key={patient.id}
@@ -459,7 +457,8 @@ export function NewAppointmentDialog({
                                                                                             )}
                                                                                         </div>
                                                                                     </CommandItem>
-                                                                                ))}
+                                                                                ))
+                                                                            )}
                                                                         </CommandGroup>
                                                                     </>
                                                                 )}
