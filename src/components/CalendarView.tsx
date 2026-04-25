@@ -537,9 +537,9 @@ export function CalendarView() {
                     style={{
                       top: `${apt.top}px`,
                       height: `${apt.height}px`,
-                      left: `${(100 / apt.totalCols) * apt.colIndex}%`,
-                      width: `${(100 / apt.totalCols) * (apt.colIndex === apt.totalCols - 1 ? 0.9 : 1)}%`,
-                      padding: '2px',
+                      left: `calc(${(100 / apt.totalCols) * apt.colIndex}% + 2px)`,
+                      width: `calc(${100 / apt.totalCols}% - 4px)`,
+                      padding: '1px 0',
                       zIndex: 10 + apt.colIndex
                     }}
                   >
