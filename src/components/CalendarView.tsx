@@ -484,26 +484,28 @@ export function CalendarView() {
                     const positionedAppointments = getPositionedAppointments(day);
                     return (
                       <div key={format(day, 'yyyy-MM-dd')} className="relative h-full border-r last:border-r-0 pointer-events-none">
-                        {positionedAppointments.map((apt: any) => (
-                          <div
-                            key={apt.id}
-                            className="absolute z-10 pointer-events-auto"
-                            style={{
-                              top: `${apt.top}px`,
-                              height: `${apt.height}px`,
-                              left: `${(100 / apt.totalCols) * apt.colIndex}%`,
-                              width: `${(100 / apt.totalCols) * (apt.colIndex === apt.totalCols - 1 ? 0.9 : 1)}%`,
-                              padding: '1px',
-                              zIndex: 10 + apt.colIndex // Ensure later overlapping items are on top
-                            }}
-                          >
-                            <AppointmentCard
-                              appointment={apt}
-                              variant="compact"
-                              onClick={() => handleAppointmentClick(apt)}
-                            />
-                          </div>
-                        ))}
+                        <div className="absolute inset-y-0 left-0 right-[24px] pointer-events-none">
+                          {positionedAppointments.map((apt: any) => (
+                            <div
+                              key={apt.id}
+                              className="absolute z-10 pointer-events-auto"
+                              style={{
+                                top: `${apt.top}px`,
+                                height: `${apt.height}px`,
+                                left: `${(100 / apt.totalCols) * apt.colIndex}%`,
+                                width: `${(100 / apt.totalCols) * (apt.colIndex === apt.totalCols - 1 ? 0.9 : 1)}%`,
+                                padding: '1px',
+                                zIndex: 10 + apt.colIndex // Ensure later overlapping items are on top
+                              }}
+                            >
+                              <AppointmentCard
+                                appointment={apt}
+                                variant="compact"
+                                onClick={() => handleAppointmentClick(apt)}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     );
                   })}
@@ -529,7 +531,7 @@ export function CalendarView() {
                 </div>
               ))}
               {/* Day View Appointments Overlay */}
-              <div className="absolute top-0 left-20 right-0 bottom-0 pointer-events-none">
+              <div className="absolute top-0 left-20 right-[24px] bottom-0 pointer-events-none">
                 {getPositionedAppointments(currentDate).map((apt: any) => (
                   <div
                     key={apt.id}
