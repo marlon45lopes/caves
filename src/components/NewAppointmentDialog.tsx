@@ -96,6 +96,7 @@ export function NewAppointmentDialog({
     initialSpecialtyId
 }: NewAppointmentDialogProps) {
     const [patientSearch, setPatientSearch] = useState('');
+    const [selectedPatientName, setSelectedPatientName] = useState('');
     const { data: patients, isLoading: patientsLoading } = useSearchPatients(patientSearch);
     const { data: clinics } = useClinics(true); // Only active clinics
     const [patientOpen, setPatientOpen] = useState(false);
@@ -157,6 +158,7 @@ export function NewAppointmentDialog({
             setIsReleased(false);
             setJustificativa('');
             setBlockReason(null);
+            setSelectedPatientName('');
 
             // Calculate initial end time (30 mins fallback)
             let endTime = '';
@@ -402,8 +404,8 @@ export function NewAppointmentDialog({
                                                                     !field.value && "text-muted-foreground"
                                                                 )}
                                                             >
-                                                                {field.value
-                                                                    ? patients?.find((patient) => patient.id === field.value)?.nome
+                                                                {field.value && selectedPatientName
+                                                                    ? selectedPatientName
                                                                     : "Selecione um paciente..."}
                                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                             </Button>
@@ -436,6 +438,7 @@ export function NewAppointmentDialog({
                                                                                         key={patient.id}
                                                                                         onSelect={() => {
                                                                                             form.setValue("paciente_id", patient.id);
+                                                                                            setSelectedPatientName(patient.nome);
                                                                                             setPatientOpen(false);
                                                                                             setPatientSearch('');
                                                                                         }}
