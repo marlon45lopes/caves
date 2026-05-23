@@ -177,250 +177,252 @@ export function PatientFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] sm:max-w-lg max-h-[95vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>{isEditing ? 'Editar Paciente' : 'Novo Paciente'}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome completo *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome do paciente" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="overflow-y-auto p-6 pt-0 min-h-0 flex-1 space-y-4">
               <FormField
                 control={form.control}
-                name="cpf"
+                name="nome"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CPF</FormLabel>
+                    <FormLabel>Nome completo *</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="000.000.000-00"
-                        maxLength={14}
-                        value={field.value}
-                        onChange={(e) => {
-                          let digits = e.target.value.replace(/\D/g, '').slice(0, 11);
-                          let formatted = digits;
-                          if (digits.length > 3) formatted = digits.slice(0, 3) + '.' + digits.slice(3);
-                          if (digits.length > 6) formatted = digits.slice(0, 3) + '.' + digits.slice(3, 6) + '.' + digits.slice(6);
-                          if (digits.length > 9) formatted = digits.slice(0, 3) + '.' + digits.slice(3, 6) + '.' + digits.slice(6, 9) + '-' + digits.slice(9);
-                          field.onChange(formatted);
-                        }}
-                      />
+                      <Input placeholder="Nome do paciente" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="cpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="000.000.000-00"
+                          maxLength={14}
+                          value={field.value}
+                          onChange={(e) => {
+                            let digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                            let formatted = digits;
+                            if (digits.length > 3) formatted = digits.slice(0, 3) + '.' + digits.slice(3);
+                            if (digits.length > 6) formatted = digits.slice(0, 3) + '.' + digits.slice(3, 6) + '.' + digits.slice(6);
+                            if (digits.length > 9) formatted = digits.slice(0, 3) + '.' + digits.slice(3, 6) + '.' + digits.slice(6, 9) + '-' + digits.slice(9);
+                            field.onChange(formatted);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="telefone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="(00) 0 0000-0000"
+                          maxLength={16}
+                          value={field.value}
+                          onChange={(e) => {
+                            let digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                            let formatted = digits;
+                            if (digits.length > 0) formatted = '(' + digits.slice(0, 2);
+                            if (digits.length >= 2) formatted = '(' + digits.slice(0, 2) + ') ';
+                            if (digits.length > 2) formatted += digits.slice(2, 3);
+                            if (digits.length > 3) formatted += ' ' + digits.slice(3, 7);
+                            if (digits.length > 7) formatted += '-' + digits.slice(7);
+                            field.onChange(formatted);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="telefone"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telefone</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="(00) 0 0000-0000"
-                        maxLength={16}
-                        value={field.value}
-                        onChange={(e) => {
-                          let digits = e.target.value.replace(/\D/g, '').slice(0, 11);
-                          let formatted = digits;
-                          if (digits.length > 0) formatted = '(' + digits.slice(0, 2);
-                          if (digits.length >= 2) formatted = '(' + digits.slice(0, 2) + ') ';
-                          if (digits.length > 2) formatted += digits.slice(2, 3);
-                          if (digits.length > 3) formatted += ' ' + digits.slice(3, 7);
-                          if (digits.length > 7) formatted += '-' + digits.slice(7);
-                          field.onChange(formatted);
-                        }}
-                      />
+                      <Input type="email" placeholder="email@exemplo.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="email@exemplo.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="sexo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sexo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="m">Masculino</SelectItem>
+                          <SelectItem value="f">Feminino</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="data_nascimento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data de Nascimento</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="matricula"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Matrícula</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número da matrícula" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="empresa_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Empresa</FormLabel>
+                      <Popover open={openCompany} onOpenChange={setOpenCompany}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value
+                                ? companies?.find(
+                                  (company) => company.id === field.value
+                                )?.nome
+                                : "Selecione uma empresa"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[200px] p-0">
+                          <Command>
+                            <CommandInput
+                              placeholder="Buscar empresa..."
+                              onValueChange={setCompanySearch}
+                            />
+                            <CommandList>
+                              {companySearch.length < 2 ? (
+                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                  Digite pelo menos 2 caracteres...
+                                </div>
+                              ) : (
+                                <>
+                                  <CommandEmpty>Nenhuma empresa encontrada.</CommandEmpty>
+                                  <CommandGroup>
+                                    {companies?.map((company) => (
+                                      <CommandItem
+                                        value={company.nome}
+                                        key={company.id}
+                                        onSelect={() => {
+                                          form.setValue("empresa_id", company.id);
+                                          setCompanySearch(''); // Reset search on select
+                                          setOpenCompany(false); // Close popover on select
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            company.id === field.value
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          )}
+                                        />
+                                        {company.nome}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Tipo de Paciente */}
               <FormField
                 control={form.control}
-                name="sexo"
+                name="tipo_paciente"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sexo</FormLabel>
+                    <FormLabel>Tipo de Paciente</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="m">Masculino</SelectItem>
-                        <SelectItem value="f">Feminino</SelectItem>
+                        <SelectItem value="TITULAR">Titular</SelectItem>
+                        <SelectItem value="DEPENDENTE">Dependente</SelectItem>
+                        <SelectItem value="EXTRAORDINARIO">Extraordinário</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="data_nascimento"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Nascimento</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="matricula"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Matrícula</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Número da matrícula" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="empresa_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Empresa</FormLabel>
-                    <Popover open={openCompany} onOpenChange={setOpenCompany}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value
-                              ? companies?.find(
-                                (company) => company.id === field.value
-                              )?.nome
-                              : "Selecione uma empresa"}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-0">
-                        <Command>
-                          <CommandInput
-                            placeholder="Buscar empresa..."
-                            onValueChange={setCompanySearch}
-                          />
-                          <CommandList>
-                            {companySearch.length < 2 ? (
-                              <div className="py-6 text-center text-sm text-muted-foreground">
-                                Digite pelo menos 2 caracteres...
-                              </div>
-                            ) : (
-                              <>
-                                <CommandEmpty>Nenhuma empresa encontrada.</CommandEmpty>
-                                <CommandGroup>
-                                  {companies?.map((company) => (
-                                    <CommandItem
-                                      value={company.nome}
-                                      key={company.id}
-                                      onSelect={() => {
-                                        form.setValue("empresa_id", company.id);
-                                        setCompanySearch(''); // Reset search on select
-                                        setOpenCompany(false); // Close popover on select
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          company.id === field.value
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        )}
-                                      />
-                                      {company.nome}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </>
-                            )}
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Tipo de Paciente */}
-            <FormField
-              control={form.control}
-              name="tipo_paciente"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Paciente</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="TITULAR">Titular</SelectItem>
-                      <SelectItem value="DEPENDENTE">Dependente</SelectItem>
-                      <SelectItem value="EXTRAORDINARIO">Extraordinário</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
+            <DialogFooter className="p-6 pt-2 border-t bg-secondary/20">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>

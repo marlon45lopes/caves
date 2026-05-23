@@ -298,309 +298,311 @@ export function EditAppointmentDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
+            <DialogContent className="w-[95vw] sm:max-w-[450px] max-h-[95vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2">
                     <DialogTitle>Editar Agendamento</DialogTitle>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        {/* Patient Info (read-only) */}
-                        <div className="p-3 bg-secondary/50 rounded-lg">
-                            <p className="text-sm text-muted-foreground">Paciente</p>
-                            <p className="font-medium">{appointment.paciente?.nome || 'Não informado'}</p>
-                        </div>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                        <div className="overflow-y-auto p-6 pt-0 min-h-0 flex-1 space-y-4">
+                            {/* Patient Info (read-only) */}
+                            <div className="p-3 bg-secondary/50 rounded-lg">
+                                <p className="text-sm text-muted-foreground">Paciente</p>
+                                <p className="font-medium">{appointment.paciente?.nome || 'Não informado'}</p>
+                            </div>
 
-                        {/* Professional Name */}
-                        <FormField
-                            control={form.control}
-                            name="profissional"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nome do Profissional</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Digite o nome do médico/profissional" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Clínica */}
+                            {/* Professional Name */}
                             <FormField
                                 control={form.control}
-                                name="clinica_id"
+                                name="profissional"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Clínica</FormLabel>
-                                        <Select
-                                            onValueChange={(value) => {
-                                                field.onChange(value);
-                                                form.setValue('especialidade_id', '');
-                                            }}
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Selecione" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {clinics?.map((clinic) => (
-                                                    <SelectItem key={clinic.id} value={clinic.id}>
-                                                        {clinic.nome}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <FormLabel>Nome do Profissional</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Digite o nome do médico/profissional" {...field} />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
-                            {/* Especialidade */}
-                            <FormField
-                                control={form.control}
-                                name="especialidade_id"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Especialidade</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value}
-                                            disabled={!selectedClinicId}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Selecione" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {filteredSpecialties?.map((spec) => (
-                                                    <SelectItem key={spec.id} value={spec.id}>
-                                                        {spec.nome}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        {/* Data */}
-                        <FormField
-                            control={form.control}
-                            name="data"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Data</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full pl-3 text-left font-normal",
-                                                        !field.value && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {field.value ? (
-                                                        format(field.value, "PPP", { locale: ptBR })
-                                                    ) : (
-                                                        <span>Selecione uma data</span>
-                                                    )}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={field.onChange}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Hora Início */}
-                            <FormField
-                                control={form.control}
-                                name="hora_inicio"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Início</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="00:00" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {timeSlots.map((time) => (
-                                                    <SelectItem key={`start-${time}`} value={time}>
-                                                        {time}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            {/* Hora Fim */}
-                            <FormField
-                                control={form.control}
-                                name="hora_fim"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Fim</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="00:00" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {timeSlots.map((time) => (
-                                                    <SelectItem key={`end-${time}`} value={time}>
-                                                        {time}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <FormField
-                            control={form.control}
-                            name="tipo_horario"
-                            render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                    <FormLabel>Tipo de Horário</FormLabel>
-                                    <FormControl>
-                                        <RadioGroup
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            value={field.value}
-                                            className="flex gap-4"
-                                        >
-                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Clínica */}
+                                <FormField
+                                    control={form.control}
+                                    name="clinica_id"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Clínica</FormLabel>
+                                            <Select
+                                                onValueChange={(value) => {
+                                                    field.onChange(value);
+                                                    form.setValue('especialidade_id', '');
+                                                }}
+                                                value={field.value}
+                                            >
                                                 <FormControl>
-                                                    <RadioGroupItem value="ordem_chegada" />
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Selecione" />
+                                                    </SelectTrigger>
                                                 </FormControl>
-                                                <FormLabel className="font-normal cursor-pointer">
-                                                    Ordem de Chegada
-                                                </FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-2 space-y-0">
-                                                <FormControl>
-                                                    <RadioGroupItem value="hora_marcada" />
-                                                </FormControl>
-                                                <FormLabel className="font-normal cursor-pointer">
-                                                    Hora Marcada
-                                                </FormLabel>
-                                            </FormItem>
-                                        </RadioGroup>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="atendimento_online"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-sm font-medium">Atendimento Online</FormLabel>
-                                    </div>
-                                    <FormControl>
-                                        <div
-                                            onClick={() => field.onChange(!field.value)}
-                                            className="flex items-center gap-2 cursor-pointer group"
-                                        >
-                                            <div className={cn(
-                                                "w-10 h-5 rounded-full border transition-all relative flex items-center px-1",
-                                                field.value ? "bg-purple-100 border-purple-300" : "bg-secondary border-input"
-                                            )}>
-                                                <div className={cn(
-                                                    "w-3 h-3 rounded-full transition-all shadow-sm",
-                                                    field.value ? "bg-purple-500 ml-auto" : "bg-muted-foreground/30 ml-0"
-                                                )} />
-                                            </div>
-                                        </div>
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="observacoes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Observações</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Detalhes adicionais (opcional)"
-                                            className="resize-none h-24"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* Alerta de Validade de Exame */}
-                        {isBlocked && !isReleased && (
-                            <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
-                                <p className="text-sm font-semibold text-destructive text-center">
-                                    {blockReason === 'penalty' ? (
-                                        <>⚠️ Este paciente possui uma falta registrada para esta especialidade nos últimos 15 dias. Agendamentos para esta especialidade estão suspensos temporariamente por este período.</>
-                                    ) : (
-                                        <>⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.</>
+                                                <SelectContent>
+                                                    {clinics?.map((clinic) => (
+                                                        <SelectItem key={clinic.id} value={clinic.id}>
+                                                            {clinic.nome}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
                                     )}
-                                </p>
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={() => setIsReleased(true)}
-                                >
-                                    Liberar com Justificativa
-                                </Button>
-                            </div>
-                        )}
-
-                        {isBlocked && isReleased && (
-                            <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-2">
-                                <FormLabel className="text-blue-700">Justificativa para liberação *</FormLabel>
-                                <Textarea
-                                    placeholder="Descreva o motivo da liberação deste agendamento..."
-                                    className="resize-none h-20 border-blue-300"
-                                    value={justificativa}
-                                    onChange={(e) => setJustificativa(e.target.value)}
                                 />
-                                <p className="text-[10px] text-blue-600">A justificativa será incluída nas observações do agendamento.</p>
-                            </div>
-                        )}
 
-                        <DialogFooter>
+                                {/* Especialidade */}
+                                <FormField
+                                    control={form.control}
+                                    name="especialidade_id"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Especialidade</FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                value={field.value}
+                                                disabled={!selectedClinicId}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Selecione" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {filteredSpecialties?.map((spec) => (
+                                                        <SelectItem key={spec.id} value={spec.id}>
+                                                            {spec.nome}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            {/* Data */}
+                            <FormField
+                                control={form.control}
+                                name="data"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Data</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                            "w-full pl-3 text-left font-normal",
+                                                            !field.value && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        {field.value ? (
+                                                            format(field.value, "PPP", { locale: ptBR })
+                                                        ) : (
+                                                            <span>Selecione uma data</span>
+                                                        )}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Hora Início */}
+                                <FormField
+                                    control={form.control}
+                                    name="hora_inicio"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Início</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="00:00" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {timeSlots.map((time) => (
+                                                        <SelectItem key={`start-${time}`} value={time}>
+                                                            {time}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {/* Hora Fim */}
+                                <FormField
+                                    control={form.control}
+                                    name="hora_fim"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Fim</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="00:00" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {timeSlots.map((time) => (
+                                                        <SelectItem key={`end-${time}`} value={time}>
+                                                            {time}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <FormField
+                                control={form.control}
+                                name="tipo_horario"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                        <FormLabel>Tipo de Horário</FormLabel>
+                                        <FormControl>
+                                            <RadioGroup
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                value={field.value}
+                                                className="flex gap-4"
+                                            >
+                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                    <FormControl>
+                                                        <RadioGroupItem value="ordem_chegada" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal cursor-pointer">
+                                                        Ordem de Chegada
+                                                    </FormLabel>
+                                                </FormItem>
+                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                    <FormControl>
+                                                        <RadioGroupItem value="hora_marcada" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal cursor-pointer">
+                                                        Hora Marcada
+                                                    </FormLabel>
+                                                </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="atendimento_online"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-sm font-medium">Atendimento Online</FormLabel>
+                                        </div>
+                                        <FormControl>
+                                            <div
+                                                onClick={() => field.onChange(!field.value)}
+                                                className="flex items-center gap-2 cursor-pointer group"
+                                            >
+                                                <div className={cn(
+                                                    "w-10 h-5 rounded-full border transition-all relative flex items-center px-1",
+                                                    field.value ? "bg-purple-100 border-purple-300" : "bg-secondary border-input"
+                                                )}>
+                                                    <div className={cn(
+                                                        "w-3 h-3 rounded-full transition-all shadow-sm",
+                                                        field.value ? "bg-purple-500 ml-auto" : "bg-muted-foreground/30 ml-0"
+                                                    )} />
+                                                </div>
+                                            </div>
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="observacoes"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Observações</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Detalhes adicionais (opcional)"
+                                                className="resize-none h-24"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Alerta de Validade de Exame */}
+                            {isBlocked && !isReleased && (
+                                <div className="p-4 border border-destructive bg-destructive/5 rounded-lg space-y-3">
+                                    <p className="text-sm font-semibold text-destructive text-center">
+                                        {blockReason === 'penalty' ? (
+                                            <>⚠️ Este paciente possui uma falta registrada para esta especialidade nos últimos 15 dias. Agendamentos para esta especialidade estão suspensos temporariamente por este período.</>
+                                        ) : (
+                                            <>⚠️ Este paciente já realizou este procedimento nos últimos {monthsLimit === 12 ? '1 ano' : '6 meses'} e ele ainda está na validade.</>
+                                        )}
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        className="w-full"
+                                        onClick={() => setIsReleased(true)}
+                                    >
+                                        Liberar com Justificativa
+                                    </Button>
+                                </div>
+                            )}
+
+                            {isBlocked && isReleased && (
+                                <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-2">
+                                    <FormLabel className="text-blue-700">Justificativa para liberação *</FormLabel>
+                                    <Textarea
+                                        placeholder="Descreva o motivo da liberação deste agendamento..."
+                                        className="resize-none h-20 border-blue-300"
+                                        value={justificativa}
+                                        onChange={(e) => setJustificativa(e.target.value)}
+                                    />
+                                    <p className="text-[10px] text-blue-600">A justificativa será incluída nas observações do agendamento.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <DialogFooter className="p-6 pt-2 border-t bg-secondary/20">
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                                 Cancelar
                             </Button>
@@ -619,7 +621,7 @@ export function EditAppointmentDialog({
                         </DialogFooter>
                     </form>
                 </Form>
-            </DialogContent >
-        </Dialog >
+            </DialogContent>
+        </Dialog>
     );
 }
